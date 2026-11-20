@@ -1,9 +1,11 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
-"""FastAPI router for AI features powered by real recognition & condition grading."""
+"""FastAPI router for AI features powered by real recognition, condition grading & conformal pricing."""
 
 from decimal import Decimal
+from typing import Optional
 
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 from app.schemas.ai import (
     AIAnalyzePhotosRequest,
@@ -16,14 +18,59 @@ from app.schemas.ai import (
     AIPriceReason,
 )
 from ml.src.condition_grader import condition_grader
+from ml.src.price_estimator import price_estimator
 from ml.src.product_recognition import product_recognizer
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
+class StandalonePriceEstimateRequest(BaseModel):
+    category: str
+    subtype: Optional[str] = None
+    brand: Optional[str] = None
+    condition: str = "good"
+    price_ask: Optional[Decimal] = None
+
+
+class StandalonePriceEstimateResponse(BaseModel):
+    low: Decimal
+    likely: Decimal
+    high: Decimal
+    fair_deal_badge: str
+    seller_guidance: Optional[str] = None
+    conformal_coverage: str
+    reasons: list[AIPriceReason] = []
+
+
+@router.post("/price-estimate", response_model=StandalonePriceEstimateResponse)
+async def get_price_estimate(payload: StandalonePriceEstimateRequest):
+    """Estimate calibrated price bounds with SHAP reasons and fair-deal badge."""
+    est = price_estimator.estimate_price(
+        category=payload.category,
+        subtype=payload.subtype,
+        brand=payload.brand,
+        condition=payload.condition,
+    )
+
+    badge, guidance = price_estimator.evaluate_fair_deal_badge(
+        price_ask=payload.price_ask,
+        price_likely=est["likely"],
+    )
+
+    return StandalonePriceEstimateResponse(
+        low=est["low"],
+        likely=est["likely"],
+        high=est["high"],
+        fair_deal_badge=badge,
+        seller_guidance=guidance,
+        conformal_coverage=est["conformal_coverage"],
+        reasons=[AIPriceReason(feature=r["feature"], effect=r["effect"]) for r in est["reasons"]],
+    )
+
+
 @router.post("/analyze-photos", response_model=AIAnalyzePhotosResponse)
 async def analyze_photos(payload: AIAnalyzePhotosRequest):
-    """Product recognition and ordinal condition grading with Grad-CAM heatmap."""
+    """Product recognition, condition grading, and split-conformal pricing."""
     context_text = " ".join(payload.image_urls) if payload.image_urls else "electronics calculator casio"
 
     # 1. Product recognition
@@ -37,34 +84,25 @@ async def analyze_photos(payload: AIAnalyzePhotosRequest):
     # 2. Condition grading (ordinal expected-value with Grad-CAM)
     cond_result = condition_grader.predict_condition(context_hints=context_text)
 
-    # 3. Dynamic pricing tailored to category and predicted condition
-    base_prices = {
-        "electronics": Decimal("850.00"),
-        "furniture": Decimal("2400.00"),
-        "books": Decimal("300.00"),
-        "hobbies": Decimal("4800.00"),
-    }
-    likely_base = base_prices.get(top_cat, Decimal("800.00"))
-    condition_multipliers = {
-        "poor": Decimal("0.65"),
-        "fair": Decimal("0.85"),
-        "good": Decimal("1.00"),
-        "like_new": Decimal("1.25"),
-    }
-    multiplier = condition_multipliers.get(cond_result["grade"], Decimal("1.00"))
-    likely = round(likely_base * multiplier, 2)
-    low = round(likely * Decimal("0.80"), 2)
-    high = round(likely * Decimal("1.25"), 2)
+    # 3. Calibrated price estimation
+    price_result = price_estimator.estimate_price(
+        category=top_cat,
+        subtype=subtype,
+        brand=brand,
+        condition=cond_result["grade"],
+    )
 
     draft_title = f"{brand} {subtype}" if brand != "Standard" else f"{subtype}"
     draft_description = (
         f"{draft_title} assessed in {cond_result['grade'].replace('_', ' ')} condition. "
-        f"Verified campus reuse listing with Grad-CAM visual wear inspection."
+        f"Verified campus reuse listing with Grad-CAM visual wear inspection and fair pricing."
     )
 
     needs_confirmation = list(rec_result["needs_confirmation"])
     if cond_result["confidence"] < 0.70:
         needs_confirmation.append("condition")
+    if price_result.get("is_widened_fallback"):
+        needs_confirmation.append("price_interval_widened")
 
     return AIAnalyzePhotosResponse(
         category=AICategoryPrediction(
@@ -83,13 +121,12 @@ async def analyze_photos(payload: AIAnalyzePhotosRequest):
             heatmap_url="/demo/heatmaps/calc-sample.png",
         ),
         price=AIPricePrediction(
-            low=low,
-            likely=likely,
-            high=high,
+            low=price_result["low"],
+            likely=price_result["likely"],
+            high=price_result["high"],
             reasons=[
-                AIPriceReason(feature=f"Item condition assessed as {cond_result['grade']}", effect=f"{int((multiplier - 1)*100):+d}%"),
-                AIPriceReason(feature=f"High campus demand for {subtype}", effect="+10%"),
-                AIPriceReason(feature="Pre-owned semester turnover", effect="-5%"),
+                AIPriceReason(feature=r["feature"], effect=r["effect"])
+                for r in price_result["reasons"]
             ],
         ),
         draft=AIDraftContent(

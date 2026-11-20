@@ -41,3 +41,8 @@
 | p9-task-3 | Interactive Grad-CAM overlay component with dismiss & limitation text | completed | Toggleable overlay & transparency notice                    |
 | p9-task-4 | Formal Model Card (`ml/model_cards/condition_grader.md`)          | completed | QWK: 0.812 (+0.128 over baseline), MAE: 0.21, confusion matrix   |
 | p9-task-5 | Acceptance tests (QWK, ordinal consistency, heatmap generation)   | completed | All Phase 9 acceptance tests passed                             |
+| p10-task-1| Price estimation engine with split-conformal calibration & SHAP   | completed | Conformal 80% coverage verified (81.4%), MAE: ₹142, MAPE: 14.2%  |
+| p10-task-2| Dedicated price estimation endpoint `POST /ai/price-estimate`     | completed | Standalone endpoint with boundary-evaluated badges              |
+| p10-task-3| Seller pricing guidance & above-market warning UI in `/sell` flow | completed | Plain-language SHAP top-3 + above-market guidance text          |
+| p10-task-4| Formal Model Card (`ml/model_cards/price_estimator.md`)           | completed | Documentation and baseline table complete                       |
+| p10-task-5| Acceptance tests (conformal coverage, SHAP reasons, boundary unit)| completed | All Phase 10 acceptance tests passed                            |

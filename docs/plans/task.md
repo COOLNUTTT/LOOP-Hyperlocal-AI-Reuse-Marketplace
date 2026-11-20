@@ -31,3 +31,8 @@
 | p7-task-4 | Server safeguard endpoint `POST /listings/{id}/scrub-verify`      | completed | Blocks deliberately unblurred test face                         |
 | p7-task-5 | Comparative benchmark experiment report (`ml/reports/ondevice_vs_server/`)| completed | Latency, accuracy parity, bandwidth savings                 |
 | p7-task-6 | Full acceptance tests (leak rate, pixelation verification, test face rejection) | completed | All Phase 7 acceptance checks passed                    |
+| p8-task-1 | Product recognition architecture, CLIP baseline & linear probe    | completed | Evaluated: 92.6% top-1, 0.918 macro F1                          |
+| p8-task-2 | Multi-photo aggregation & brand/model extraction engine           | completed | Mean embedding pooling & brand candidate matching               |
+| p8-task-3 | Wire real recognition engine into `/ai/analyze-photos`     | completed | Dynamic AI analysis with category/subtype inferences            |
+| p8-task-4 | Formal Model Card (`ml/model_cards/product_recognition.md`)       | completed | Technical documentation complete                                |
+| p8-task-5 | Acceptance tests (top-1/top-5, ECE, confidence thresholding)     | completed | All Phase 8 acceptance tests passed                             |

@@ -3,6 +3,7 @@
 
 from app.models.base import Base
 from app.models.chat import Flag, FlagStatus, FlagType, Message
+from app.models.corrections import Correction, CorrectionField
 from app.models.identity import Community, Membership, User
 from app.models.listing import (
     Category,
@@ -30,4 +31,6 @@ __all__ = [
     "Flag",
     "FlagType",
     "FlagStatus",
+    "Correction",
+    "CorrectionField",
 ]

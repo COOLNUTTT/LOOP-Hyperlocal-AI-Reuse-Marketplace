@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.listing import FairDealGrade, Listing, ListingImage, ListingStatus
+from app.models.identity import User
+from app.services.correction_service import CorrectionService
 
 
 class ListingService:
@@ -40,8 +42,12 @@ class ListingService:
         db: AsyncSession,
         seller_id: uuid.UUID,
         payload_data: dict[str, Any],
+        user: Optional[User] = None,
     ) -> Listing:
-        """Create a new listing in draft status."""
+        """Create a new listing in draft status and record corrections if AI fields were edited."""
+        ai_baseline = payload_data.pop("ai_baseline", None)
+        payload_data.pop("client_listing_duration_ms", None)
+
         # Calculate fair deal badge if not provided
         if not payload_data.get("fair_deal"):
             payload_data["fair_deal"] = ListingService.calculate_fair_deal_badge(
@@ -58,6 +64,22 @@ class ListingService:
         db.add(listing)
         await db.commit()
         await db.refresh(listing)
+
+        # Record active learning corrections if ai_baseline provided
+        if ai_baseline and user:
+            try:
+                await CorrectionService.detect_and_record_corrections(
+                    db=db,
+                    listing_id=listing.id,
+                    user=user,
+                    ai_state=ai_baseline,
+                    user_state=payload_data,
+                    category=listing.category,
+                    subtype=listing.subtype,
+                )
+            except Exception:
+                pass
+
         return listing
 
     @staticmethod
@@ -153,14 +175,25 @@ class ListingService:
         listing_id: uuid.UUID,
         seller_id: uuid.UUID,
         update_data: dict[str, Any],
+        user: Optional[User] = None,
     ) -> Listing:
-        """Update draft or active listing owned by seller."""
+        """Update draft or active listing owned by seller and log corrections if AI fields changed."""
         listing = await ListingService.get_listing(db, listing_id)
         if listing.seller_id != seller_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to modify this listing.",
             )
+
+        ai_baseline = update_data.pop("ai_baseline", None)
+
+        # Cache baseline if not provided explicitly: compare against existing listing values
+        ai_state = ai_baseline or {
+            "category": listing.category,
+            "subtype": listing.subtype,
+            "condition": listing.condition_ai or listing.condition,
+            "price_likely": listing.price_ai_likely or listing.price_likely,
+        }
 
         for key, value in update_data.items():
             if value is not None and hasattr(listing, key):
@@ -176,6 +209,22 @@ class ListingService:
 
         await db.commit()
         await db.refresh(listing)
+
+        # Record corrections if user modified category, subtype, condition or price
+        if user:
+            try:
+                await CorrectionService.detect_and_record_corrections(
+                    db=db,
+                    listing_id=listing.id,
+                    user=user,
+                    ai_state=ai_state,
+                    user_state=update_data,
+                    category=listing.category,
+                    subtype=listing.subtype,
+                )
+            except Exception:
+                pass
+
         return listing
 
     @staticmethod

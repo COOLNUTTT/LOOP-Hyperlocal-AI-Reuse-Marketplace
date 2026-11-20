@@ -46,3 +46,8 @@
 | p10-task-3| Seller pricing guidance & above-market warning UI in `/sell` flow | completed | Plain-language SHAP top-3 + above-market guidance text          |
 | p10-task-4| Formal Model Card (`ml/model_cards/price_estimator.md`)           | completed | Documentation and baseline table complete                       |
 | p10-task-5| Acceptance tests (conformal coverage, SHAP reasons, boundary unit)| completed | All Phase 10 acceptance tests passed                            |
+| p11-task-1| Database model & Alembic migration `0004_corrections` with RLS    | completed | Schema-exact `corrections` table with training eligibility      |
+| p11-task-2| Active learning correction service & auto-logging on edits        | completed | Record delta between AI predictions and user edits              |
+| p11-task-3| Smart autofill generator & enhanced `/ai/analyze-photos`          | completed | Attributes, specs, templates & p95 latency (< 1ms benchmark)    |
+| p11-task-4| Mobile-first `/sell` UX update with telemetry & low-conf alerts   | completed | Full slice: photo → quality → scrub → review → publish         |
+| p11-task-5| Full acceptance & E2E tests for M1 Snap-to-List slice             | completed | All Phase 11 acceptance criteria and benchmarks passed          |

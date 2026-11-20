@@ -94,7 +94,7 @@ async def create_listing(
 ):
     """Create a new listing draft."""
     data = payload.model_dump()
-    listing = await ListingService.create_listing(db, current_user.id, data)
+    listing = await ListingService.create_listing(db, current_user.id, data, user=current_user)
     return listing
 
 
@@ -114,9 +114,9 @@ async def update_listing(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    """Update listing details."""
+    """Update listing details and record active learning corrections if AI predictions changed."""
     data = payload.model_dump(exclude_unset=True)
-    return await ListingService.update_listing(db, listing_id, current_user.id, data)
+    return await ListingService.update_listing(db, listing_id, current_user.id, data, user=current_user)
 
 
 @router.post("/{listing_id}/publish", response_model=PublishListingResponse)

@@ -1,6 +1,7 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 """FastAPI router for AI features powered by real recognition, condition grading & conformal pricing."""
 
+import time
 from decimal import Decimal
 from typing import Optional
 
@@ -20,6 +21,7 @@ from app.schemas.ai import (
 from ml.src.condition_grader import condition_grader
 from ml.src.price_estimator import price_estimator
 from ml.src.product_recognition import product_recognizer
+from ml.src.smart_autofill import smart_autofill
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -70,7 +72,8 @@ async def get_price_estimate(payload: StandalonePriceEstimateRequest):
 
 @router.post("/analyze-photos", response_model=AIAnalyzePhotosResponse)
 async def analyze_photos(payload: AIAnalyzePhotosRequest):
-    """Product recognition, condition grading, and split-conformal pricing."""
+    """Product recognition, condition grading, split-conformal pricing & smart autofill."""
+    start_time = time.perf_counter()
     context_text = " ".join(payload.image_urls) if payload.image_urls else "electronics calculator casio"
 
     # 1. Product recognition
@@ -92,10 +95,22 @@ async def analyze_photos(payload: AIAnalyzePhotosRequest):
         condition=cond_result["grade"],
     )
 
-    draft_title = f"{brand} {subtype}" if brand != "Standard" else f"{subtype}"
-    draft_description = (
-        f"{draft_title} assessed in {cond_result['grade'].replace('_', ' ')} condition. "
-        f"Verified campus reuse listing with Grad-CAM visual wear inspection and fair pricing."
+    # 4. Smart autofill specifications & templated draft
+    smart_specs = smart_autofill.generate_smart_attributes(
+        category=top_cat,
+        subtype=subtype,
+        brand=brand,
+        model=model,
+        condition=cond_result["grade"],
+    )
+
+    draft_copy = smart_autofill.generate_draft_copy(
+        category=top_cat,
+        subtype=subtype,
+        brand=brand,
+        model=model,
+        condition=cond_result["grade"],
+        attributes=smart_specs,
     )
 
     needs_confirmation = list(rec_result["needs_confirmation"])
@@ -103,6 +118,8 @@ async def analyze_photos(payload: AIAnalyzePhotosRequest):
         needs_confirmation.append("condition")
     if price_result.get("is_widened_fallback"):
         needs_confirmation.append("price_interval_widened")
+
+    latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
     return AIAnalyzePhotosResponse(
         category=AICategoryPrediction(
@@ -130,8 +147,10 @@ async def analyze_photos(payload: AIAnalyzePhotosRequest):
             ],
         ),
         draft=AIDraftContent(
-            title=draft_title,
-            description=draft_description,
+            title=draft_copy["title"],
+            description=draft_copy["description"],
+            attributes=smart_specs,
         ),
         needs_confirmation=needs_confirmation,
+        latency_ms=latency_ms,
     )

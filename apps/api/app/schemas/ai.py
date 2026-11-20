@@ -40,6 +40,7 @@ class AIPricePrediction(BaseModel):
 class AIDraftContent(BaseModel):
     title: str
     description: str
+    attributes: dict[str, Any] = {}
 
 
 class AIAnalyzePhotosRequest(BaseModel):
@@ -55,3 +56,4 @@ class AIAnalyzePhotosResponse(BaseModel):
     price: AIPricePrediction
     draft: AIDraftContent
     needs_confirmation: list[str] = []
+    latency_ms: Optional[float] = None

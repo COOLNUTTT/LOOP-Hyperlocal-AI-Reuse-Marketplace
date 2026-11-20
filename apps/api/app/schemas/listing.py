@@ -48,6 +48,10 @@ class ListingCreateRequest(BaseModel):
     geohash5: str = Field(..., min_length=5, max_length=5)
     community_id: Optional[uuid.UUID] = None
 
+    # Snap-to-List AI baseline state and telemetry for active learning corrections
+    ai_baseline: Optional[dict[str, Any]] = None
+    client_listing_duration_ms: Optional[int] = None
+
     @field_validator("geohash5")
     @classmethod
     def validate_geohash5(cls, v: str) -> str:
@@ -68,6 +72,9 @@ class ListingUpdateRequest(BaseModel):
     attributes: Optional[dict[str, Any]] = None
     area_name: Optional[str] = Field(None, min_length=2, max_length=100)
     geohash5: Optional[str] = Field(None, min_length=5, max_length=5)
+
+    # Active learning corrections tracking
+    ai_baseline: Optional[dict[str, Any]] = None
 
     @field_validator("geohash5")
     @classmethod

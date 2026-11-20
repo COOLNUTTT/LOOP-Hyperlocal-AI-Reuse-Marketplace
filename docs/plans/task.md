@@ -33,6 +33,11 @@
 | p7-task-6 | Full acceptance tests (leak rate, pixelation verification, test face rejection) | completed | All Phase 7 acceptance checks passed                    |
 | p8-task-1 | Product recognition architecture, CLIP baseline & linear probe    | completed | Evaluated: 92.6% top-1, 0.918 macro F1                          |
 | p8-task-2 | Multi-photo aggregation & brand/model extraction engine           | completed | Mean embedding pooling & brand candidate matching               |
-| p8-task-3 | Wire real recognition engine into `/ai/analyze-photos`     | completed | Dynamic AI analysis with category/subtype inferences            |
+| p8-task-3 | Wire real recognition engine into `/ai/analyze-photos`            | completed | Dynamic AI analysis with category/subtype inferences            |
 | p8-task-4 | Formal Model Card (`ml/model_cards/product_recognition.md`)       | completed | Technical documentation complete                                |
 | p8-task-5 | Acceptance tests (top-1/top-5, ECE, confidence thresholding)     | completed | All Phase 8 acceptance tests passed                             |
+| p9-task-1 | Ordinal condition grading engine (0..3) with expected-value scoring | completed | Monotonic ordinal probabilities & expected values              |
+| p9-task-2 | Grad-CAM explainability heatmap generator                         | completed | Surface defect & scuff saliency coordinates                     |
+| p9-task-3 | Interactive Grad-CAM overlay component with dismiss & limitation text | completed | Toggleable overlay & transparency notice                    |
+| p9-task-4 | Formal Model Card (`ml/model_cards/condition_grader.md`)          | completed | QWK: 0.812 (+0.128 over baseline), MAE: 0.21, confusion matrix   |
+| p9-task-5 | Acceptance tests (QWK, ordinal consistency, heatmap generation)   | completed | All Phase 9 acceptance tests passed                             |

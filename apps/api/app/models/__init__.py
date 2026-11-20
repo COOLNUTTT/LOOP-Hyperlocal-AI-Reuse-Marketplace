@@ -1,6 +1,7 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 """Database models package."""
 
+from app.models.audit import AuditLog
 from app.models.base import Base
 from app.models.chat import Flag, FlagStatus, FlagType, Message
 from app.models.corrections import Correction, CorrectionField
@@ -39,4 +40,5 @@ __all__ = [
     "HandoverEvent",
     "HandoverStatus",
     "Review",
+    "AuditLog",
 ]

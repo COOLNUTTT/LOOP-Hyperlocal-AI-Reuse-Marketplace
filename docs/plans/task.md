@@ -61,3 +61,7 @@
 | p13-task-3| Gated reviews & transparent trust score breakdown                 | completed | 403 if handover not completed; additive score breakdown         |
 | p13-task-4| Chat-safety warnings, negotiation helper & handover router        | completed | Scam keyword rules + price-range negotiation tips               |
 | p13-task-5| Acceptance tests & Phase 13 completion report                     | completed | All Phase 13 acceptance tests passed                            |
+| p14-task-1| Fraud, duplicate-image, price-anomaly & scam-text engine          | completed | Human-readable reasons; no auto-removal                         |
+| p14-task-2| Moderation queue, audit_logs & model-health router                | completed | Uphold/dismiss/remove/warn + audit trail                        |
+| p14-task-3| Synthetic evaluation (precision/recall/FPR) & report              | completed | Clearly labelled `data_origin='synthetic'`                      |
+| p14-task-4| Acceptance tests & Phase 14 completion report                     | completed | All Phase 14 acceptance tests passed                            |

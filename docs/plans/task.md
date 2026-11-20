@@ -25,3 +25,9 @@
 | p6-task-3 | Chat API router (`/chat/threads`, `/chat/messages`, `/chat/report`)| completed | Thread history & reporting                                      |
 | p6-task-4 | Mobile-first Chat Inbox (`/chat`) and Thread UI (`/chat/[listingId]`)| completed | Unread indicators & real-time updates                          |
 | p6-task-5 | Acceptance tests for RLS isolation, rate limit (60/min) & report flag | completed | All Phase 6 acceptance checks passed                           |
+| p7-task-1 | Quality check heuristics & ONNX quality pipeline                  | completed | Laplacian variance + luminance detection                        |
+| p7-task-2 | Client-side privacy scrubber with canvas pixelation               | completed | Irreversible canvas redactor in Next.js                         |
+| p7-task-3 | Interactive scrubber UI with add/resize/remove box controls       | completed | Integrated into `/sell` flow                                    |
+| p7-task-4 | Server safeguard endpoint `POST /listings/{id}/scrub-verify`      | completed | Blocks deliberately unblurred test face                         |
+| p7-task-5 | Comparative benchmark experiment report (`ml/reports/ondevice_vs_server/`)| completed | Latency, accuracy parity, bandwidth savings                 |
+| p7-task-6 | Full acceptance tests (leak rate, pixelation verification, test face rejection) | completed | All Phase 7 acceptance checks passed                    |

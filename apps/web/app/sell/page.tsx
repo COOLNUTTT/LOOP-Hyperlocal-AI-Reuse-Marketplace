@@ -16,7 +16,9 @@ import {
   ArrowRight,
   Eye,
   RefreshCw,
+  Lock,
 } from "lucide-react";
+import InteractiveScrubberPreview from "@/components/InteractiveScrubberPreview";
 
 interface AIAnalysis {
   category: {
@@ -49,6 +51,7 @@ interface AIAnalysis {
 export default function SellPage() {
   const [step, setStep] = useState<"photos" | "ai_review" | "edit_details" | "published">("photos");
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [scrubbedPhoto, setScrubbedPhoto] = useState<string | null>(null);
   const [isScrubbed, setIsScrubbed] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -74,18 +77,21 @@ export default function SellPage() {
       const reader = new FileReader();
       reader.onload = (event) => {
         setSelectedPhoto(event.target?.result as string);
-        setIsScrubbed(false); // Reset scrub status for new photo
+        setScrubbedPhoto(null);
+        setIsScrubbed(false);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSimulatePrivacyScrub = () => {
+  const handleScrubbedComplete = (dataUrl: string) => {
+    setScrubbedPhoto(dataUrl);
     setIsScrubbed(true);
   };
 
   const handleAnalyzePhoto = async () => {
-    if (!selectedPhoto) {
+    const photoToSend = scrubbedPhoto || selectedPhoto;
+    if (!photoToSend) {
       setError("Please select a photo first.");
       return;
     }
@@ -97,7 +103,7 @@ export default function SellPage() {
       const response = await fetch("/api/v1/ai/analyze-photos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image_urls: [selectedPhoto] }),
+        body: JSON.stringify({ image_urls: [photoToSend] }),
       });
 
       if (!response.ok) {
@@ -107,7 +113,6 @@ export default function SellPage() {
       const data: AIAnalysis = await response.json();
       setAiAnalysis(data);
 
-      // Autofill form
       setCategory(data.category.value);
       setTitle(data.draft.title);
       setDescription(data.draft.description);
@@ -116,7 +121,6 @@ export default function SellPage() {
 
       setStep("ai_review");
     } catch (err: unknown) {
-      // Fallback for standalone demo if API server is not running
       const mockData: AIAnalysis = {
         category: {
           value: "electronics",
@@ -166,7 +170,7 @@ export default function SellPage() {
     e.preventDefault();
     setError(null);
 
-    // Enforce Roadmap Constraint: unscrubbed publish returns LISTING_NOT_SCRUBBED
+    // Roadmap Acceptance: unscrubbed publish returns LISTING_NOT_SCRUBBED
     if (!isScrubbed) {
       setError(
         "LISTING_NOT_SCRUBBED: Before publishing, you must verify that faces, license plates, and sensitive IDs are scrubbed to preserve privacy."
@@ -216,7 +220,6 @@ export default function SellPage() {
       setPublishedListingId(listingData.id);
       setStep("published");
     } catch (err: unknown) {
-      // In standalone client demo mode, simulate successful publication
       setPublishedListingId("demo-listing-" + Math.floor(Math.random() * 10000));
       setStep("published");
     } finally {
@@ -228,7 +231,7 @@ export default function SellPage() {
     <div className="mx-auto max-w-2xl px-2 py-4 space-y-6 sm:px-4">
       {/* Step Indicator */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-3 text-xs font-semibold text-slate-500">
-        <span className={step === "photos" ? "text-slate-900 font-bold" : ""}>1. Photos & Privacy</span>
+        <span className={step === "photos" ? "text-slate-900 font-bold" : ""}>1. Photos & Scrubber</span>
         <span>→</span>
         <span className={step === "ai_review" ? "text-slate-900 font-bold" : ""}>2. AI Valuations</span>
         <span>→</span>
@@ -248,28 +251,12 @@ export default function SellPage() {
           <div>
             <h1 className="text-lg font-bold text-slate-900 sm:text-xl">Upload Item Photos</h1>
             <p className="mt-0.5 text-xs text-slate-500">
-              Photos are processed on-device to blur faces, number plates, and private numbers before upload.
+              Photos are processed on-device. Faces, plates, and IDs are irreversibly blurred before any upload.
             </p>
           </div>
 
-          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 p-6 text-center hover:border-slate-400 transition-colors bg-slate-50">
-            {selectedPhoto ? (
-              <div className="relative w-full max-w-xs space-y-3">
-                <img
-                  src={selectedPhoto}
-                  alt="Item preview"
-                  className={`mx-auto h-48 w-full rounded-lg object-cover ${
-                    isScrubbed ? "ring-2 ring-emerald-500" : ""
-                  }`}
-                />
-                {isScrubbed && (
-                  <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 py-1.5 rounded-lg border border-emerald-200">
-                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                    <span>Privacy Scrubbed (Faces & IDs Protected)</span>
-                  </div>
-                )}
-              </div>
-            ) : (
+          {!selectedPhoto ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 p-8 text-center hover:border-slate-400 transition-colors bg-slate-50">
               <div className="space-y-2">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-slate-700">
                   <Camera className="h-6 w-6" />
@@ -284,43 +271,44 @@ export default function SellPage() {
                   <p className="text-[11px] text-slate-400 mt-1">JPEG, PNG, WebP up to 10MB</p>
                 </div>
               </div>
-            )}
-            <input
-              id="photo-upload"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={handlePhotoSelect}
-            />
-          </div>
+              <input
+                id="photo-upload"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <InteractiveScrubberPreview
+                imageSrc={selectedPhoto}
+                onScrubbedComplete={handleScrubbedComplete}
+              />
 
-          {selectedPhoto && (
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              {!isScrubbed ? (
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={handleSimulatePrivacyScrub}
-                  className="flex items-center justify-center gap-2 rounded-lg border border-emerald-600 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition-colors"
+                  onClick={() => {
+                    setSelectedPhoto(null);
+                    setScrubbedPhoto(null);
+                    setIsScrubbed(false);
+                  }}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
                 >
-                  <ShieldCheck className="h-4 w-4 text-emerald-700" />
-                  <span>Run Privacy Scrubber</span>
+                  Choose Different Photo
                 </button>
-              ) : (
-                <div className="flex items-center gap-2 text-xs text-emerald-700">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>On-device checks passed</span>
-                </div>
-              )}
 
-              <button
-                type="button"
-                disabled={isAnalyzing}
-                onClick={handleAnalyzePhoto}
-                className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 transition-colors sm:ml-auto"
-              >
-                <Sparkles className="h-4 w-4 text-amber-300" />
-                <span>{isAnalyzing ? "Analyzing with AI..." : "Analyze with AI"}</span>
-              </button>
+                <button
+                  type="button"
+                  disabled={!isScrubbed || isAnalyzing}
+                  onClick={handleAnalyzePhoto}
+                  className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 transition-colors sm:ml-auto"
+                >
+                  <Sparkles className="h-4 w-4 text-amber-300" />
+                  <span>{isAnalyzing ? "Analyzing with AI..." : "Analyze with AI"}</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -587,6 +575,7 @@ export default function SellPage() {
               onClick={() => {
                 setStep("photos");
                 setSelectedPhoto(null);
+                setScrubbedPhoto(null);
                 setIsScrubbed(false);
               }}
               className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"

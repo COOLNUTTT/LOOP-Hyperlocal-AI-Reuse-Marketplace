@@ -136,10 +136,13 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            <button className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition-colors">
+            <Link
+              href={`/chat/${item.id}`}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition-colors"
+            >
               <MessageSquare className="h-4 w-4" />
               <span>Chat with Seller</span>
-            </button>
+            </Link>
             <button
               onClick={() => setIsSaved(!isSaved)}
               className={`rounded-xl border p-3 transition-colors ${

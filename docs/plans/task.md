@@ -20,3 +20,8 @@
 | p5-task-4 | Mobile-first Browse page with filter drawer & coarse Map View     | completed | Responsive at 360px viewport; coarse centroids only             |
 | p5-task-5 | Listing Detail Page (`/listings/[id]`) with image gallery         | completed | Integrates FairDealBadge and VerifiedBadge                      |
 | p5-task-6 | Full acceptance tests for filter combinations & geo privacy       | completed | Measured load < 0.05s on 1k listings; geo privacy verified      |
+| p6-task-1 | `messages` and `flags` models, Alembic migration 0003 with RLS    | completed | Non-participants blocked by RLS                                 |
+| p6-task-2 | Chat rate limiter (60/min) and messaging service layer            | completed | 429 error on 61st message                                       |
+| p6-task-3 | Chat API router (`/chat/threads`, `/chat/messages`, `/chat/report`)| completed | Thread history & reporting                                      |
+| p6-task-4 | Mobile-first Chat Inbox (`/chat`) and Thread UI (`/chat/[listingId]`)| completed | Unread indicators & real-time updates                          |
+| p6-task-5 | Acceptance tests for RLS isolation, rate limit (60/min) & report flag | completed | All Phase 6 acceptance checks passed                           |

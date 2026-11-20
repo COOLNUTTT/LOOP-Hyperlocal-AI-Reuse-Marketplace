@@ -2,6 +2,7 @@
 """Database models package."""
 
 from app.models.base import Base
+from app.models.chat import Flag, FlagStatus, FlagType, Message
 from app.models.identity import Community, Membership, User
 from app.models.listing import (
     Category,
@@ -25,4 +26,8 @@ __all__ = [
     "Category",
     "ConditionGrade",
     "FairDealGrade",
+    "Message",
+    "Flag",
+    "FlagType",
+    "FlagStatus",
 ]

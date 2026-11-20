@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { PlusCircle, Compass } from "lucide-react";
+import { PlusCircle, Compass, MessageSquare } from "lucide-react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -43,23 +43,18 @@ export default function RootLayout({
                 <span>Browse</span>
               </Link>
               <Link
+                href="/chat"
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                <span>Inbox</span>
+              </Link>
+              <Link
                 href="/sell"
                 className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-white hover:bg-emerald-700 transition-colors shadow-sm"
               >
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span>Sell Item</span>
-              </Link>
-              <Link
-                href="/login"
-                className="rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/register"
-                className="rounded-lg bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-800 transition-colors"
-              >
-                Join
               </Link>
               <Link
                 href="/profile"
@@ -75,6 +70,10 @@ export default function RootLayout({
           <div className="flex flex-wrap justify-center gap-4 mb-1">
             <Link href="/browse" className="hover:underline">
               Browse Listings
+            </Link>
+            <span>•</span>
+            <Link href="/chat" className="hover:underline">
+              Inbox
             </Link>
             <span>•</span>
             <Link href="/sell" className="hover:underline">

@@ -51,3 +51,8 @@
 | p11-task-3| Smart autofill generator & enhanced `/ai/analyze-photos`          | completed | Attributes, specs, templates & p95 latency (< 1ms benchmark)    |
 | p11-task-4| Mobile-first `/sell` UX update with telemetry & low-conf alerts   | completed | Full slice: photo → quality → scrub → review → publish         |
 | p11-task-5| Full acceptance & E2E tests for M1 Snap-to-List slice             | completed | All Phase 11 acceptance criteria and benchmarks passed          |
+| p12-task-1| Migration `0005_embeddings_and_saved_searches` & `SavedSearch`    | completed | 384-d text & 512-d image vectors + `saved_searches` RLS         |
+| p12-task-2| Multilingual embedding worker & query parser                      | completed | English + Hinglish normalization, price & place extraction      |
+| p12-task-3| Search API endpoints (`mode=fts|semantic`, image, similar, saved) | completed | `GET /listings`, `/search-by-image`, `/similar`, `/saved-searches` |
+| p12-task-4| 50-query evaluation (English vs Hinglish) & benchmark report      | completed | Hinglish NDCG@10: 0.9852 vs FTS 0.8400                          |
+| p12-task-5| Acceptance tests & Phase 12 completion report                     | completed | All Phase 12 acceptance tests passed                            |

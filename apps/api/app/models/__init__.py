@@ -14,6 +14,7 @@ from app.models.listing import (
     ListingStatus,
     ListingType,
 )
+from app.models.saved_search import SavedSearch
 
 __all__ = [
     "Base",
@@ -33,4 +34,5 @@ __all__ = [
     "FlagStatus",
     "Correction",
     "CorrectionField",
+    "SavedSearch",
 ]

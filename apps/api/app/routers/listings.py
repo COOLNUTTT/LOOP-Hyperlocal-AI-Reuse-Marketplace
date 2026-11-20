@@ -21,13 +21,16 @@ from app.schemas.listing import (
 )
 from app.services.image_service import ImageProcessingService
 from app.services.listing_service import ListingService
+from app.services.search_service import SearchService
+from ml.src.semantic_search import parse_natural_query
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
 
 @router.get("", response_model=ListingListResponse)
 async def list_listings(
-    q: Optional[str] = Query(None, description="Search keyword in title, subtype, brand or description"),
+    q: Optional[str] = Query(None, description="Search keyword or natural query (e.g. 'study table under 3000 near Wakad')"),
+    mode: str = Query("semantic", pattern="^(semantic|fts)$", description="Search mode: semantic or fts baseline"),
     category: Optional[str] = Query(None, pattern="^(electronics|furniture|books|hobbies)$"),
     type: Optional[str] = Query(None, pattern="^(sell|donate|swap)$"),
     condition: Optional[str] = Query(None, pattern="^(like_new|good|fair|poor)$"),
@@ -39,7 +42,12 @@ async def list_listings(
     offset: int = Query(0, ge=0),
     db: Annotated[AsyncSession, Depends(get_db)] = None,
 ):
-    """Browse and filter active listings with pagination and coarse geo-filtering."""
+    """Browse and filter active listings with semantic multilingual search or FTS baseline."""
+    parsed = parse_natural_query(q) if (q and mode == "semantic") else {"clean_query": q, "price_max": None, "area_name": None}
+    effective_price_max = price_max if price_max is not None else parsed.get("price_max")
+    effective_area = area_name if area_name is not None else parsed.get("area_name")
+    effective_q = parsed.get("clean_query") if (q and mode == "semantic") else q
+
     if db is None:
         # Standalone mock response when running without database
         return ListingListResponse(
@@ -47,22 +55,25 @@ async def list_listings(
             limit=limit,
             offset=offset,
             items=[],
-            applied_filters={"q": q, "category": category, "type": type},
+            applied_filters={"q": effective_q, "mode": mode, "category": category, "type": type},
         )
 
     items, total = await ListingService.list_listings(
         db=db,
-        q=q,
+        q=effective_q,
         category=category,
         listing_type=type,
         condition=condition,
         price_min=price_min,
-        price_max=price_max,
-        area_name=area_name,
+        price_max=effective_price_max,
+        area_name=effective_area,
         geohash5=geohash5,
         limit=limit,
         offset=offset,
     )
+
+    if q and mode == "semantic" and items:
+        items, _ = SearchService.rank_listings_semantic(items, q, top_k=limit)
 
     return ListingListResponse(
         total=total,
@@ -157,4 +168,47 @@ async def upload_listing_image(
         storage_path=storage_path,
         scrubbed=scrubbed,
         quality_score=0.92,
+    )
+
+
+@router.post("/search-by-image", response_model=ListingListResponse)
+async def search_by_image(
+    image_hint: str = Query(..., description="Image context or visual signature"),
+    limit: int = Query(10, ge=1, le=50),
+    db: Annotated[AsyncSession, Depends(get_db)] = None,
+):
+    """Search active listings using 512-d image embedding similarity."""
+    if db is None:
+        return ListingListResponse(total=0, limit=limit, offset=0, items=[], applied_filters={"mode": "image"})
+
+    items, _ = await ListingService.list_listings(db=db, limit=100, offset=0)
+    ranked = SearchService.search_by_image(items, image_hint=image_hint, top_k=limit)
+    return ListingListResponse(
+        total=len(ranked),
+        limit=limit,
+        offset=0,
+        items=ranked,
+        applied_filters={"mode": "image", "image_hint": image_hint},
+    )
+
+
+@router.get("/{listing_id}/similar", response_model=ListingListResponse)
+async def get_similar_listings(
+    listing_id: uuid.UUID,
+    limit: int = Query(4, ge=1, le=12),
+    db: Annotated[AsyncSession, Depends(get_db)] = None,
+):
+    """Return similar active listings for a given listing detail page."""
+    if db is None:
+        return ListingListResponse(total=0, limit=limit, offset=0, items=[], applied_filters={"similar_to": str(listing_id)})
+
+    target = await ListingService.get_listing(db, listing_id)
+    candidates, _ = await ListingService.list_listings(db=db, category=target.category, limit=50, offset=0)
+    similar = SearchService.find_similar_items(target, candidates, top_k=limit)
+    return ListingListResponse(
+        total=len(similar),
+        limit=limit,
+        offset=0,
+        items=similar,
+        applied_filters={"similar_to": str(listing_id)},
     )

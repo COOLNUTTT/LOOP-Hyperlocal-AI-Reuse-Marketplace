@@ -113,6 +113,14 @@ class ListingDetailResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ListingListResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    items: list[ListingDetailResponse]
+    applied_filters: dict[str, Any] = {}
+
+
 class PublishListingResponse(BaseModel):
     id: uuid.UUID
     status: str = "active"

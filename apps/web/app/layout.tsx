@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Compass } from "lucide-react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -36,6 +36,13 @@ export default function RootLayout({
 
             <nav className="flex items-center gap-2 text-xs font-semibold">
               <Link
+                href="/browse"
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <Compass className="h-3.5 w-3.5" />
+                <span>Browse</span>
+              </Link>
+              <Link
                 href="/sell"
                 className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-white hover:bg-emerald-700 transition-colors shadow-sm"
               >
@@ -66,6 +73,10 @@ export default function RootLayout({
         <main className="flex-1 mx-auto w-full max-w-4xl px-3 py-4 sm:px-4 sm:py-6">{children}</main>
         <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
           <div className="flex flex-wrap justify-center gap-4 mb-1">
+            <Link href="/browse" className="hover:underline">
+              Browse Listings
+            </Link>
+            <span>•</span>
             <Link href="/sell" className="hover:underline">
               Sell / Donate / Swap
             </Link>

@@ -14,3 +14,9 @@
 | p4-task-5 | `scripts/seed.py` database seeder                                 | completed | Realistic items with `data_origin='simulated'`                  |
 | p4-task-6 | Mobile-first sell flow page (`/sell`) in Next.js web app          | completed | Multi-step photo -> AI draft -> edit -> publish                  |
 | p4-task-7 | Full verification, test suite & acceptance report                 | completed | All Phase 4 acceptance criteria passed                          |
+| p5-task-1 | Discovery query service with filters, pagination & fair-deal calc | completed | Supports q, category, type, condition, price, geohash           |
+| p5-task-2 | API endpoint `GET /listings` and `GET /listings/{id}` enhancement | completed | Eager load images and seller community badge                    |
+| p5-task-3 | Fair-deal badge UI component with price explainability            | completed | Great / Fair / Overpriced badge states                          |
+| p5-task-4 | Mobile-first Browse page with filter drawer & coarse Map View     | completed | Responsive at 360px viewport; coarse centroids only             |
+| p5-task-5 | Listing Detail Page (`/listings/[id]`) with image gallery         | completed | Integrates FairDealBadge and VerifiedBadge                      |
+| p5-task-6 | Full acceptance tests for filter combinations & geo privacy       | completed | Measured load < 0.05s on 1k listings; geo privacy verified      |

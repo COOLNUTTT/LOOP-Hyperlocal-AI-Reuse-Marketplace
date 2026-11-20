@@ -3,5 +3,26 @@
 
 from app.models.base import Base
 from app.models.identity import Community, Membership, User
+from app.models.listing import (
+    Category,
+    ConditionGrade,
+    FairDealGrade,
+    Listing,
+    ListingImage,
+    ListingStatus,
+    ListingType,
+)
 
-__all__ = ["Base", "User", "Community", "Membership"]
+__all__ = [
+    "Base",
+    "User",
+    "Community",
+    "Membership",
+    "Listing",
+    "ListingImage",
+    "ListingType",
+    "ListingStatus",
+    "Category",
+    "ConditionGrade",
+    "FairDealGrade",
+]

@@ -56,3 +56,8 @@
 | p12-task-3| Search API endpoints (`mode=fts|semantic`, image, similar, saved) | completed | `GET /listings`, `/search-by-image`, `/similar`, `/saved-searches` |
 | p12-task-4| 50-query evaluation (English vs Hinglish) & benchmark report      | completed | Hinglish NDCG@10: 0.9852 vs FTS 0.8400                          |
 | p12-task-5| Acceptance tests & Phase 12 completion report                     | completed | All Phase 12 acceptance tests passed                            |
+| p13-task-1| `HandoverEvent` & `Review` models + migration `0006`              | completed | RLS for buyer/seller participants                               |
+| p13-task-2| Handover service (meetup spots, OTP expiry/attempts, confirm)     | completed | Transitions to `completed` only after both confirm              |
+| p13-task-3| Gated reviews & transparent trust score breakdown                 | completed | 403 if handover not completed; additive score breakdown         |
+| p13-task-4| Chat-safety warnings, negotiation helper & handover router        | completed | Scam keyword rules + price-range negotiation tips               |
+| p13-task-5| Acceptance tests & Phase 13 completion report                     | completed | All Phase 13 acceptance tests passed                            |

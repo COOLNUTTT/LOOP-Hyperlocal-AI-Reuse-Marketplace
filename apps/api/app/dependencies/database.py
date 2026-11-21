@@ -1,6 +1,7 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 """Database session dependency for FastAPI routes."""
 
+import asyncio
 import importlib.util
 from typing import AsyncGenerator, Optional
 
@@ -19,10 +20,20 @@ if HAS_GREENLET and hasattr(settings, "database_url") and settings.database_url:
 
 
 async def get_db() -> AsyncGenerator[Optional[AsyncSession], None]:
-    """Provide a database session or None in standalone/mock mode."""
+    """Provide a database session or None when Postgres is unreachable (standalone/CI mode)."""
     if async_session_factory is None:
         yield None
         return
 
-    async with async_session_factory() as session:
+    session = async_session_factory()
+    try:
+        await asyncio.wait_for(session.connection(), timeout=1.0)
+    except Exception:
+        await session.close()
+        yield None
+        return
+
+    try:
         yield session
+    finally:
+        await session.close()

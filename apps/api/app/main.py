@@ -11,10 +11,12 @@ from app.routers import (
     chat,
     handover,
     health,
+    impact,
     listings,
     moderation,
     saved_searches,
     scrub_verify,
+    swap,
     users,
 )
 
@@ -45,6 +47,8 @@ def create_app() -> FastAPI:
     application.include_router(saved_searches.router, prefix="/api/v1")
     application.include_router(handover.router, prefix="/api/v1")
     application.include_router(moderation.router, prefix="/api/v1")
+    application.include_router(swap.router, prefix="/api/v1")
+    application.include_router(impact.router, prefix="/api/v1")
 
     return application
 

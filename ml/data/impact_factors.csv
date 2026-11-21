@@ -1,0 +1,21 @@
+category,subtype,embodied_co2_kg,weight_kg,source,year,confidence
+electronics,laptop,210.0,1.80,"Dell & Apple Product Environmental Reports (14-inch Laptop LCA Median)",2024,high
+electronics,smartphone,65.0,0.19,"Apple iPhone & Fairphone Life Cycle Assessment Reports",2024,high
+electronics,monitor,185.0,4.50,"Dell 24-inch LCD Monitor Product Carbon Footprint Report",2023,high
+electronics,scientific calculator,12.5,0.15,"ADEME Base Empreinte Small Consumer Electronics LCA",2023,medium
+electronics,headphones,18.0,0.28,"ADEME Base Empreinte Personal Audio Equipment LCA",2023,medium
+electronics,default,75.0,1.10,"UNU Global E-Waste Monitor & ADEME Consumer Electronics Aggregate",2024,medium
+furniture,study table,45.0,14.50,"FIRA Furniture Industry Research Association Desk Carbon Footprint Study",2022,high
+furniture,office chair,62.0,12.00,"FIRA Task Chair Life Cycle Assessment Report",2022,high
+furniture,bookshelf,38.0,11.00,"ADEME Base Empreinte Engineered Wood Storage Furniture LCA",2023,medium
+furniture,mattress,85.0,16.00,"European Bedding Industries Association Foam Mattress LCA",2023,medium
+furniture,default,50.0,12.50,"FIRA Domestic Furniture Embodied Carbon Summary",2022,medium
+books,textbook,4.2,0.85,"Book Industry Study Group & Carbon Trust Paper Publishing LCA",2022,high
+books,reference book,3.5,0.65,"Carbon Trust Academic Book Life Cycle Study",2022,high
+books,novel,1.8,0.32,"Carbon Trust Paperback Book Footprint Report",2022,high
+books,default,3.2,0.60,"Book Industry Study Group Printed Book Average LCA",2022,medium
+hobbies,bicycle,135.0,13.50,"Trek & European Cyclists Federation Aluminum Commuter Bicycle LCA",2023,high
+hobbies,acoustic guitar,28.0,2.40,"ADEME Musical Instruments & Wood Goods Carbon Database",2023,medium
+hobbies,board game,5.5,0.95,"ADEME Toy & Tabletop Game Packaging and Paperboard LCA",2023,medium
+hobbies,badminton racket,9.0,0.18,"ADEME Sporting Goods Composite Equipment Estimate",2023,medium
+hobbies,default,35.0,3.50,"ADEME Recreation & Sporting Goods Aggregate Factor",2023,medium

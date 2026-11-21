@@ -70,3 +70,8 @@
 | p15-task-3| Multi-seed active learning experiment (5 seeds + 10%/20% noise)   | completed | Error-band SVG figure captioned `Simulated Corrections`         |
 | p15-task-4| Admin endpoints (`/admin/corrections/stats`, `/admin/models/*`) & UI | completed | Responsive 360px admin view for corrections & model versions    |
 | p15-task-5| Acceptance tests & Phase 15 completion report                     | completed | All Phase 15 acceptance tests and CI checks passed              |
+| p16-task-1| `Wishlist`, `SwapCycle`, `SwapProposal`, `ImpactEvent` & migration `0008` | completed | RLS enabled on all 4 swap & impact tables                       |
+| p16-task-2| Algorithmic swap graph builder, <=3-cycle CP-SAT solver & baseline| completed | Per-edge value tolerance & all-party confirmation handovers     |
+| p16-task-3| Cited `ml/data/impact_factors.csv`, sensitivity engine & `IMPACT_METHOD.md` | completed | Traceable LCA citations & displacement range [0.30, 0.80]       |
+| p16-task-4| Swap & Impact routers (`/wishlists`, `/swap/*`, `/impact/*`) & Next.js UI | completed | Explicitly labelled Algorithmic in UI & API                     |
+| p16-task-5| Acceptance tests & Phase 16 completion report                     | completed | All Phase 16 acceptance tests and CI checks passed              |

@@ -1,5 +1,5 @@
 {
-  "run_id": "phase18_val_55bf0f1a",
+  "run_id": "phase18_val_3bd68dc3",
   "data_origin": "simulated",
   "journeys": {
     "journey_1_snap_to_list": true,
@@ -10,9 +10,9 @@
   },
   "load_benchmark": {
     "iterations": 50,
-    "p50_latency_ms": 0.139,
-    "p95_latency_ms": 0.159,
+    "p50_latency_ms": 0.308,
+    "p95_latency_ms": 0.615,
     "target_p95_ms": 1000.0,
-    "throughput_ops_per_sec": 6939.2
+    "throughput_ops_per_sec": 2783.0
   }
 }

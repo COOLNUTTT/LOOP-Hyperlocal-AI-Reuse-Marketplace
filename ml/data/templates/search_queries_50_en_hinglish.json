@@ -1,0 +1,410 @@
+{
+  "schema_version": "1.0.0",
+  "data_origin": "simulated",
+  "total_queries": 50,
+  "english_count": 25,
+  "hinglish_count": 25,
+  "queries": [
+    {
+      "query_id": "q01",
+      "query_text": "study table under 3000 near Wakad",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L2"
+      ]
+    },
+    {
+      "query_id": "q02",
+      "query_text": "scientific calculator casio",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L1"
+      ]
+    },
+    {
+      "query_id": "q03",
+      "query_text": "ergonomic chair in Wakad",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L3"
+      ]
+    },
+    {
+      "query_id": "q04",
+      "query_text": "engineering mathematics textbook",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L4"
+      ]
+    },
+    {
+      "query_id": "q05",
+      "query_text": "acoustic guitar yamaha",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L5"
+      ]
+    },
+    {
+      "query_id": "q06",
+      "query_text": "badminton racket yonex",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L6"
+      ]
+    },
+    {
+      "query_id": "q07",
+      "query_text": "dell laptop ssd",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L7"
+      ]
+    },
+    {
+      "query_id": "q08",
+      "query_text": "bluetooth headphones under 2000",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L8"
+      ]
+    },
+    {
+      "query_id": "q09",
+      "query_text": "single bed mattress",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L9"
+      ]
+    },
+    {
+      "query_id": "q10",
+      "query_text": "gate exam guide book",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L10"
+      ]
+    },
+    {
+      "query_id": "q11",
+      "query_text": "desk for study",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L2"
+      ]
+    },
+    {
+      "query_id": "q12",
+      "query_text": "math calculator",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L1"
+      ]
+    },
+    {
+      "query_id": "q13",
+      "query_text": "office chair",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L3"
+      ]
+    },
+    {
+      "query_id": "q14",
+      "query_text": "college textbook",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L4"
+      ]
+    },
+    {
+      "query_id": "q15",
+      "query_text": "music guitar",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L5"
+      ]
+    },
+    {
+      "query_id": "q16",
+      "query_text": "sports racket",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L6"
+      ]
+    },
+    {
+      "query_id": "q17",
+      "query_text": "computer laptop",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L7"
+      ]
+    },
+    {
+      "query_id": "q18",
+      "query_text": "wireless earphones",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L8"
+      ]
+    },
+    {
+      "query_id": "q19",
+      "query_text": "foam mattress",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L9"
+      ]
+    },
+    {
+      "query_id": "q20",
+      "query_text": "competitive exam book",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L10"
+      ]
+    },
+    {
+      "query_id": "q21",
+      "query_text": "ikea furniture near Wakad",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L2"
+      ]
+    },
+    {
+      "query_id": "q22",
+      "query_text": "casio calculator under 1000",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L1"
+      ]
+    },
+    {
+      "query_id": "q23",
+      "query_text": "chair below 3500",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L3"
+      ]
+    },
+    {
+      "query_id": "q24",
+      "query_text": "grewal book",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L4"
+      ]
+    },
+    {
+      "query_id": "q25",
+      "query_text": "yamaha guitar",
+      "lang": "en",
+      "relevant_listing_ids": [
+        "L5"
+      ]
+    },
+    {
+      "query_id": "q26",
+      "query_text": "padhai ki mez 3000 ke andar Wakad ke paas",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L2"
+      ]
+    },
+    {
+      "query_id": "q27",
+      "query_text": "engineering ki kitab",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L4"
+      ]
+    },
+    {
+      "query_id": "q28",
+      "query_text": "sasta calculator",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L1"
+      ]
+    },
+    {
+      "query_id": "q29",
+      "query_text": "kursi Wakad me",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L3"
+      ]
+    },
+    {
+      "query_id": "q30",
+      "query_text": "baja guitar",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L5"
+      ]
+    },
+    {
+      "query_id": "q31",
+      "query_text": "padhai ke liye table",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L2"
+      ]
+    },
+    {
+      "query_id": "q32",
+      "query_text": "naya mattress",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L9"
+      ]
+    },
+    {
+      "query_id": "q33",
+      "query_text": "sasti kitab",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L4",
+        "L10"
+      ]
+    },
+    {
+      "query_id": "q34",
+      "query_text": "exam ki kitaab",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L10"
+      ]
+    },
+    {
+      "query_id": "q35",
+      "query_text": "purana laptop",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L7"
+      ]
+    },
+    {
+      "query_id": "q36",
+      "query_text": "gana bajane wala guitar",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L5"
+      ]
+    },
+    {
+      "query_id": "q37",
+      "query_text": "sasta headphones",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L8"
+      ]
+    },
+    {
+      "query_id": "q38",
+      "query_text": "padhai ka table",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L2"
+      ]
+    },
+    {
+      "query_id": "q39",
+      "query_text": "badminton khelne ka racket",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L6"
+      ]
+    },
+    {
+      "query_id": "q40",
+      "query_text": "bistar gadda",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L9"
+      ]
+    },
+    {
+      "query_id": "q41",
+      "query_text": "math ka calculator",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L1"
+      ]
+    },
+    {
+      "query_id": "q42",
+      "query_text": "office ki kursi",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L3"
+      ]
+    },
+    {
+      "query_id": "q43",
+      "query_text": "college ki kitab",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L4"
+      ]
+    },
+    {
+      "query_id": "q44",
+      "query_text": "bluetooth earphones sasta",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L8"
+      ]
+    },
+    {
+      "query_id": "q45",
+      "query_text": "study mez",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L2"
+      ]
+    },
+    {
+      "query_id": "q46",
+      "query_text": "gate ki kitaab",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L10"
+      ]
+    },
+    {
+      "query_id": "q47",
+      "query_text": "racket sports",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L6"
+      ]
+    },
+    {
+      "query_id": "q48",
+      "query_text": "laptop 30000 ke andar",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L7"
+      ]
+    },
+    {
+      "query_id": "q49",
+      "query_text": "gadda Charholi me",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L9"
+      ]
+    },
+    {
+      "query_id": "q50",
+      "query_text": "calculator Lohegaon ke paas",
+      "lang": "hinglish",
+      "relevant_listing_ids": [
+        "L1"
+      ]
+    }
+  ]
+}

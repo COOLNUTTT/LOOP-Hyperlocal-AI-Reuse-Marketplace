@@ -1,0 +1,5 @@
+query_id,query_text,language,candidate_listing_id,relevance_grade_0_1_2,annotator_id,data_origin,notes
+q01,casio scientific calculator fx 991ex,en,lst-calc-01,2,ann-01,simulated,Exact subtype and brand match
+q01,casio scientific calculator fx 991ex,en,lst-book-01,0,ann-01,simulated,Irrelevant category
+q26,bhai सस्ता study table chahiye under 2500 near lohegaon,hinglish,lst-desk-01,2,ann-01,simulated,Exact Hinglish intent + price ceiling + area match
+q26,bhai सस्ता study table chahiye under 2500 near lohegaon,hinglish,lst-chair-01,1,ann-01,simulated,Related furniture item in same budget

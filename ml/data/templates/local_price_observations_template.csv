@@ -1,0 +1,9 @@
+observation_id,category,subtype,brand,model,condition_grade,age_months,observed_price_inr,area_geohash5,data_origin,notes
+price-obs-001,electronics,Scientific Calculator,Casio,fx-991EX ClassWiz,good,12,850.00,tek3x,simulated,Semester end engineering calculator observation
+price-obs-002,electronics,Laptop,Dell,Inspiron 15 3520,good,24,25500.00,tek3x,simulated,Hostel student used i5 laptop
+price-obs-003,furniture,Study Table,IKEA,LINNMON ADILS,good,18,2350.00,tek3r,simulated,Wakad / Lohegaon student study desk
+price-obs-004,furniture,Ergonomic Chair,Featherlite,Liberate Mesh,like_new,8,3400.00,tek3x,simulated,Mesh office chair in hostel block
+price-obs-005,books,Engineering Textbook,S. Chand,Higher Engineering Mathematics B.S. Grewal,good,6,340.00,tek3x,simulated,44th edition clean pages
+price-obs-006,hobbies,Acoustic Guitar,Yamaha,F280 Dreadnought,good,14,4700.00,tek3x,simulated,Includes gig bag and capo
+price-obs-007,hobbies,Badminton Racket,Yonex,Astrox Smash,fair,10,950.00,tek3x,simulated,Minor grip wear intact strings
+price-obs-008,electronics,Headphones,Sony,WH-CH520,like_new,4,1350.00,tek3x,simulated,USB-C wireless on-ear headphones

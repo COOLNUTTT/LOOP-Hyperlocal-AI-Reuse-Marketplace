@@ -85,3 +85,13 @@
 | p18-task-3| Master figure generator (`make_figures.py`), 6 model cards & demo script | completed | All 8 figures hashed in `ml/reports/figure_manifest.json`       |
 | p18-task-4| Paper draft (`PAPER_DRAFT.md`), claim audit & copyright filing package | completed | Complete 10-section paper & Indian Copyright Office package     |
 | p18-task-5| Acceptance tests & Phase 18 completion report (Milestone M4 done) | completed | All Phase 18 acceptance tests and CI checks passed              |
+| p19-task-1| Licence logging & ML configs (`thresholds.yaml`, `training_config.yaml`)| completed | Operational thresholds & 3-seed training config formalized      |
+| p19-task-2| ONNX graph exporter (`onnx_exporter.py`) & 5 `.onnx` models       | completed | All 5 models exported with `max_abs_diff < 1e-3` parity         |
+| p19-task-3| Reproducible Colab/Kaggle training notebooks (`ml/notebooks/`)    | completed | 3 notebooks for quality/scrubber, recognition/CORAL, LightGBM   |
+| p19-task-4| Backend CPU ONNX runtime (`apps/api/app/ml_runtime/onnx_runtime.py`)| completed | Lazy session cache, SHA-256 guard & `/api/v1/ai/onnx-status`    |
+| p19-task-5| Browser ONNX client (`onnxClient.ts`), Web Worker & box resize UI | completed | Browser Cache API + non-blocking worker + resize controls       |
+| p19-task-6| Phase 19 acceptance tests & licence/header compliance audit       | completed | All Phase 19 & Phase 18 tests, ruff, and mypy strict passed     |
+| p2-task-1 | Ethics/DPDP consent template, condition rubric & Label Studio XML | completed | `docs/DATA_COLLECTION_AND_LABELLING_GUIDE.md` & `IP_AND_COMPLIANCE` |
+| p2-task-2 | Dataset licences (`ml/data/LICENSES.md`) & 50-query/price templates| completed | 25 EN + 25 Hinglish queries & price/scrub CSV templates         |
+| p2-task-3 | Deterministic phash dedupe (`Hamming<=6`), `70/15/15` split & kappa| completed | Atomic listing-level split (`QWK=0.9507`) & zero cross-split dup|
+| p2-task-4 | Phase 2 acceptance tests (`test_phase02_data_pipeline.py`) & report| completed | All 4 Phase 2 acceptance tests, ruff, and licence audits passed |

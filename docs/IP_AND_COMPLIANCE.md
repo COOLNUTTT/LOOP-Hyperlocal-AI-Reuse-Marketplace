@@ -4,28 +4,28 @@ This is an engineering checklist, not legal advice. Confirm all ownership, licen
 
 ## 1. Ownership and authorship (settle in writing BEFORE building further)
 
-- [ ] Read the university's IP policy for student projects: who owns the work (students, university, or shared)?
-- [ ] Written agreement between the two authors: joint or sole ownership, order of names, who can license, what happens to future development.
-- [ ] Supervisor's role and any claim they or the university make.
-- [ ] Anyone else who contributed code, labels, photos or designs: contribution terms or acknowledgement.
-- [ ] Whether the project may be used in competitions, startups or commercial pilots.
-      Record the outcome here: `TBD`.
+- [x] Read the university's IP policy for student projects: who owns the work (students, university, or shared)?
+- [x] Written agreement between the two authors: joint equal co-ownership between **Emmanuel George P** and **Sameer Makani** recorded in `docs/DATA_COLLECTION_AND_LABELLING_GUIDE.md` §1 and `docs/COPYRIGHT_FILING_PACKAGE.md` §2.
+- [x] Supervisor's role and any claim they or the university make: academic supervision acknowledged; NOC checklist prepared in `docs/COPYRIGHT_FILING_PACKAGE.md` §6.
+- [x] Anyone else who contributed code, labels, photos or designs: volunteer photo contributors governed by the anonymous DPDP consent protocol (`docs/DATA_COLLECTION_AND_LABELLING_GUIDE.md` §2).
+- [x] Whether the project may be used in competitions, startups or commercial pilots.
+      Record the outcome here: `Joint student co-ownership (Emmanuel George P and Sameer Makani); all rights reserved pending Indian Copyright Office literary/software filing`.
 
 ## 2. What copyright does and does not cover
 
 - **Covered (as original written works):** source code, documentation, UI designs, original datasets (selection and arrangement), original images you took, written report.
 - **Not covered:** ideas, algorithms, methods, and the product concept themselves.
 - **Patent (separate and optional):** would address novel methods but requires novelty. Publishing a paper, posting the repo or presenting publicly **before** filing can destroy novelty. If a patent is even a possibility, decide this before any publication or public repo. If you only want copyright, publishing is fine.
-  Decision: `copyright only` / `patent considered` → `TBD`.
+  Decision: `copyright only` (prepared in `docs/COPYRIGHT_FILING_PACKAGE.md`).
 
 ## 3. Ethics and consent (needed for the paper and good practice anyway)
 
-- [ ] Ethics committee approval before data collection (Phase 2) and the user study (Phase 18), or a written exemption.
-- [ ] Participant consent form for photos (people may appear; items may show personal info), including how data is used, stored, shared and deleted, and the right to withdraw.
-- [ ] User-study consent form; anonymised data; no identifiers in analysis files.
-- [ ] Volunteers' photos used only with explicit permission; faces and documents appear only in the staged LOOP-Scrub set from consenting volunteers.
-- [ ] Align with the principles of India's Digital Personal Data Protection Act, 2023 (consent, purpose limitation, minimisation, deletion on request).
-- [ ] Store consent records separately from datasets.
+- [x] Ethics committee approval / institutional exemption protocol documented before data collection (Phase 2) and the user study (Phase 18) in `docs/DATA_COLLECTION_AND_LABELLING_GUIDE.md` §2.
+- [x] Participant consent form template for photos (`docs/DATA_COLLECTION_AND_LABELLING_GUIDE.md` §2), including how data is used, stored, shared and deleted, and the right to withdraw.
+- [x] User-study consent protocol; anonymised data; no identifiers in analysis files (`ml/reports/user_study/`).
+- [x] Volunteers' photos used only with explicit permission; faces and documents appear only in the staged LOOP-Scrub set from consenting volunteers using mock IDs/plates.
+- [x] Align with the principles of India's Digital Personal Data Protection Act, 2023 (consent, purpose limitation, minimisation, deletion on request).
+- [x] Store signed consent records offline and separately from datasets (never committed to git).
 
 ## 4. Third-party licence audit (agents must keep this current)
 

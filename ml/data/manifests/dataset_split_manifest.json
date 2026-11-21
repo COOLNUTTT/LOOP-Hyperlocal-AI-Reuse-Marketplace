@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "data_origin": "simulated",
+  "seed": 42,
+  "manifest_sha256": "82ad16bea6609edac8b8545be6c791622e9b87aa77feba29eaab22e9b5337a1b",
+  "total_input_photos": 111,
+  "accepted_photos": 107,
+  "dropped_near_duplicates": 4,
+  "unique_listings": 80,
+  "split_counts": {
+    "train_photos": 61,
+    "val_photos": 22,
+    "test_photos": 24
+  },
+  "leakage_verification": {
+    "zero_listing_overlap": true,
+    "overlapping_listing_ids": [],
+    "zero_near_duplicate_leakage": true,
+    "cross_split_near_duplicates_found": 0
+  },
+  "annotator_agreement": {
+    "quadratic_weighted_kappa": 0.9507,
+    "linear_weighted_kappa": 0.9021,
+    "num_annotators": 2,
+    "tie_breaker_enabled": true
+  },
+  "category_distribution": {
+    "electronics": 27,
+    "furniture": 26,
+    "books": 27,
+    "hobbies": 27
+  },
+  "condition_distribution": {
+    "poor": 27,
+    "fair": 26,
+    "good": 27,
+    "like_new": 27
+  },
+  "live_volunteer_collection_status": "TBD (parallel human collection track governed by docs/DATA_COLLECTION_AND_LABELLING_GUIDE.md)"
+}

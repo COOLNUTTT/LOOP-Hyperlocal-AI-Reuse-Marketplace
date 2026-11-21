@@ -1,0 +1,40 @@
+<View>
+  <Header value="LOOP Multi-Annotator Listing &amp; Privacy Scrubber Interface (Copyright (c) 2026 Emmanuel George P and Sameer Makani)" />
+  <Image name="image" value="$image_url" zoom="true" rotateControl="true" />
+
+  <View style="display: flex; gap: 24px; margin-top: 12px;">
+    <View style="flex: 1;">
+      <Header value="1. Category (4 Classes)" size="4" />
+      <Choices name="category" toName="image" choice="single" required="true">
+        <Choice value="electronics" />
+        <Choice value="furniture" />
+        <Choice value="books" />
+        <Choice value="hobbies" />
+      </Choices>
+
+      <Header value="2. Ordinal Condition Grade (0..3)" size="4" />
+      <Choices name="condition_grade" toName="image" choice="single" required="true">
+        <Choice value="like_new" alias="3" />
+        <Choice value="good" alias="2" />
+        <Choice value="fair" alias="1" />
+        <Choice value="poor" alias="0" />
+      </Choices>
+
+      <Header value="3. Subtype &amp; Visible Brand" size="4" />
+      <TextArea name="subtype" toName="image" placeholder="e.g. Scientific Calculator, Study Table" maxSubmissions="1" />
+      <TextArea name="brand" toName="image" placeholder="e.g. Casio, IKEA, Pearson (optional)" maxSubmissions="1" />
+    </View>
+
+    <View style="flex: 1;">
+      <Header value="4. Sensitive PII &amp; Surface Wear Bounding Boxes" size="4" />
+      <RectangleLabels name="boxes" toName="image">
+        <Label value="face" background="#EF4444" />
+        <Label value="id_card" background="#DC2626" />
+        <Label value="plate" background="#F97316" />
+        <Label value="phone" background="#EAB308" />
+        <Label value="address" background="#8B5CF6" />
+        <Label value="wear_defect" background="#3B82F6" />
+      </RectangleLabels>
+    </View>
+  </View>
+</View>

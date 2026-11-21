@@ -16,6 +16,7 @@ from app.models.listing import (
     ListingStatus,
     ListingType,
 )
+from app.models.model_version import ModelVersion
 from app.models.saved_search import SavedSearch
 
 __all__ = [
@@ -41,4 +42,5 @@ __all__ = [
     "HandoverStatus",
     "Review",
     "AuditLog",
+    "ModelVersion",
 ]

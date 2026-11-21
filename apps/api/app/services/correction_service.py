@@ -39,12 +39,20 @@ class CorrectionService:
         if not user:
             return False
 
-        # Admin or verified user check
-        is_trusted = (
-            getattr(user, "is_verified", False)
-            or getattr(user, "role", "user") == "admin"
-            or (
-                hasattr(user, "trust_score") and user.trust_score and float(user.trust_score) >= 0.5
+        # Admin or verified user check (requires completed_trades >= 1 if set)
+        completed_trades = getattr(user, "completed_trades", None)
+        has_completed_trade = completed_trades is None or int(completed_trades) >= 1
+        is_admin = getattr(user, "role", "user") == "admin"
+
+        is_trusted = is_admin or (
+            has_completed_trade
+            and (
+                getattr(user, "is_verified", False)
+                or (
+                    hasattr(user, "trust_score")
+                    and user.trust_score
+                    and float(user.trust_score) >= 0.5
+                )
             )
         )
 

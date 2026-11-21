@@ -65,3 +65,8 @@
 | p14-task-2| Moderation queue, audit_logs & model-health router                | completed | Uphold/dismiss/remove/warn + audit trail                        |
 | p14-task-3| Synthetic evaluation (precision/recall/FPR) & report              | completed | Clearly labelled `data_origin='synthetic'`                      |
 | p14-task-4| Acceptance tests & Phase 14 completion report                     | completed | All Phase 14 acceptance tests passed                            |
+| p15-task-1| `ModelVersion` model & migration `0007_model_versions_and_audit`  | completed | Schema-exact `model_versions` & `audit_logs` with RLS           |
+| p15-task-2| Anti-poisoning filter, frozen test-set hash guard & `retrain.py`  | completed | Gated promotion & rollback across recognition, condition, price |
+| p15-task-3| Multi-seed active learning experiment (5 seeds + 10%/20% noise)   | completed | Error-band SVG figure captioned `Simulated Corrections`         |
+| p15-task-4| Admin endpoints (`/admin/corrections/stats`, `/admin/models/*`) & UI | completed | Responsive 360px admin view for corrections & model versions    |
+| p15-task-5| Acceptance tests & Phase 15 completion report                     | completed | All Phase 15 acceptance tests and CI checks passed              |

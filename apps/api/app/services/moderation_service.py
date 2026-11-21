@@ -84,3 +84,40 @@ class ModerationService:
             "drift_status": drift_status,
             "confidence_histogram": bins,
         }
+
+    @staticmethod
+    def compute_corrections_stats(corrections: List[Any]) -> Dict[str, Any]:
+        """Aggregate active learning corrections counts per field and training eligibility."""
+        fields = ["category", "subtype", "condition", "price"]
+        per_field: Dict[str, Dict[str, int]] = {
+            f: {"total": 0, "eligible": 0, "rejected_poisoning": 0} for f in fields
+        }
+        total = 0
+        total_eligible = 0
+
+        for corr in corrections:
+            raw_field = (
+                getattr(corr, "field", "") if not isinstance(corr, dict) else corr.get("field", "")
+            )
+            f_name = str(raw_field).strip().lower()
+            is_elig = bool(
+                getattr(corr, "eligible_for_training", False)
+                if not isinstance(corr, dict)
+                else corr.get("eligible_for_training", False)
+            )
+            if f_name not in per_field:
+                per_field[f_name] = {"total": 0, "eligible": 0, "rejected_poisoning": 0}
+            per_field[f_name]["total"] += 1
+            total += 1
+            if is_elig:
+                per_field[f_name]["eligible"] += 1
+                total_eligible += 1
+            else:
+                per_field[f_name]["rejected_poisoning"] += 1
+
+        return {
+            "total_corrections": total,
+            "eligible_for_training": total_eligible,
+            "rejected_by_anti_poisoning": total - total_eligible,
+            "per_field": per_field,
+        }

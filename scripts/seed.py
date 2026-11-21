@@ -5,9 +5,6 @@ All synthetic records are explicitly tagged with data_origin='simulated'
 per DATA_MODEL_AND_API.md §1 & ML_SPEC.
 """
 
-import os
-import sys
-import uuid
 from decimal import Decimal
 
 # Standalone simulation items

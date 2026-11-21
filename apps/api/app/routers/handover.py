@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_db_user
 from app.dependencies.database import get_db
 from app.models.handover import HandoverEvent, Review
 from app.models.identity import User
@@ -79,7 +79,7 @@ async def get_meetup_spots(area_name: str = "") -> list[str]:
 )
 async def initiate_handover(
     payload: InitiateHandoverRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> InitiateHandoverResponse:
     """Initiate a handover event with a 6-digit OTP."""
@@ -116,7 +116,7 @@ async def initiate_handover(
 async def confirm_handover(
     handover_id: uuid.UUID,
     payload: ConfirmHandoverRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> HandoverEvent:
     """Confirm handover with OTP. Transitions listing to completed once both confirm."""
@@ -153,7 +153,7 @@ async def confirm_handover(
 async def create_review(
     handover_id: uuid.UUID,
     payload: CreateReviewRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Review:
     """Submit a review gated on a completed handover."""

@@ -8,7 +8,7 @@ MRR, and query latency.
 import math
 import time
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from ml.src.semantic_search import parse_natural_query, embed_text, cosine_similarity
 

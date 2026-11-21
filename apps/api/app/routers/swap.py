@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_db_user
 from app.dependencies.database import get_db
 from app.models.identity import User
 from app.models.swap import SwapCycle, SwapProposal, Wishlist
@@ -29,7 +29,7 @@ class WishlistCreateRequest(BaseModel):
 @router.post("/wishlists", status_code=status.HTTP_201_CREATED)
 async def create_wishlist_item(
     payload: WishlistCreateRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """Create a user wishlist entry with 384-d semantic embedding for swap graph matching."""
@@ -58,7 +58,7 @@ async def create_wishlist_item(
 
 @router.get("/wishlists")
 async def list_my_wishlists(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[Any]:
     """List active wishlist wants for the authenticated user."""
@@ -73,7 +73,7 @@ async def list_my_wishlists(
 
 @router.get("/swap/proposals")
 async def list_my_swap_proposals(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """List multi-party swap proposals involving the current user (labelled algorithmic)."""
@@ -95,7 +95,7 @@ async def list_my_swap_proposals(
 @router.post("/swap/proposals/{proposal_id}/confirm")
 async def confirm_swap_proposal(
     proposal_id: uuid.UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """Confirm the user's edge in a swap cycle; cycle confirms only when all parties confirm."""

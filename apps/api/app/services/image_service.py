@@ -1,6 +1,7 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 """Service for validating, stripping EXIF metadata, and saving listing images."""
 
+import importlib
 import io
 from typing import Tuple
 
@@ -33,7 +34,7 @@ class ImageProcessingService:
         try:
             # Re-encode to clean byte stream to strip EXIF
             # Using Pillow if present, or byte-level safe cleaner
-            from PIL import Image
+            Image = importlib.import_module("PIL.Image")
 
             img = Image.open(io.BytesIO(file_bytes))
             clean_io = io.BytesIO()

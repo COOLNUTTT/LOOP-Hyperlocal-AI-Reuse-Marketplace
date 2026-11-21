@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.auth import AuthenticatedUser
 from app.models.identity import User
+from app.models.listing import Listing
 from app.schemas.user import (
     UserDataExportResponse,
     UserDeleteResponse,
@@ -127,17 +128,26 @@ class UserService:
     ) -> UserDeleteResponse:
         """Permanently delete user profile, purge storage files, and remove auth account."""
         auth_uid_str = str(auth_user.auth_uid)
+        listing_ids: list[str] = []
+        user: Optional[User] = None
 
-        # 1. Purge storage files first (DPDP Act right to erasure)
-        await admin_service.purge_user_storage(auth_uid_str)
-
-        # 2. Delete database rows if DB connected
         if db is not None:
             result = await db.execute(select(User).where(User.auth_uid == auth_user.auth_uid))
             user = result.scalar_one_or_none()
-            if user:
-                await db.delete(user)
-                await db.commit()
+            if user is not None:
+                l_res = await db.execute(select(Listing.id).where(Listing.seller_id == user.id))
+                listing_ids = [str(lid) for lid in l_res.scalars().all()]
+
+        # 1. Purge storage files first (DPDP Act right to erasure)
+        if listing_ids:
+            await admin_service.purge_user_storage(auth_uid_str, listing_ids=listing_ids)
+        else:
+            await admin_service.purge_user_storage(auth_uid_str)
+
+        # 2. Delete database rows if DB connected
+        if db is not None and user is not None:
+            await db.delete(user)
+            await db.commit()
 
         # 3. Delete Supabase Auth user via admin API
         await admin_service.delete_auth_user(auth_uid_str)

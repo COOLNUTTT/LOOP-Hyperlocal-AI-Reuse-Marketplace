@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_db_user
 from app.dependencies.database import get_db
 from app.models.audit import AuditLog
 from app.models.chat import Flag
@@ -49,7 +49,7 @@ def _require_moderator(user: User) -> None:
 
 @router.get("/flags")
 async def list_flag_queue(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
     flag_status: str = "open",
 ) -> list[Any]:
@@ -65,7 +65,7 @@ async def list_flag_queue(
 async def moderate_flag(
     flag_id: uuid.UUID,
     payload: ModerationActionRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, str]:
     """Execute a moderator decision (uphold/dismiss/remove/warn) and write an audit_logs row."""
@@ -98,7 +98,7 @@ async def moderate_flag(
 
 @router.get("/model-health")
 async def get_model_health(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """Return confidence histograms and drift indicators for active models."""
@@ -111,7 +111,7 @@ async def get_model_health(
 
 @router.get("/corrections/stats")
 async def get_corrections_stats(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """Return active learning corrections counts per field and anti-poisoning breakdown."""
@@ -124,7 +124,7 @@ async def get_corrections_stats(
 
 @router.get("/models")
 async def list_model_versions(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[Any]:
     """Return tracked active and candidate model_versions."""
@@ -138,7 +138,7 @@ async def list_model_versions(
 async def promote_model_version(
     name: str,
     payload: ModelPromoteRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """Promote a candidate model version ONLY if it passes the frozen test-set promotion gate."""
@@ -216,7 +216,7 @@ async def promote_model_version(
 @router.post("/models/{name}/rollback")
 async def rollback_active_model(
     name: str,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """Roll back a model to its most recent previous version and record an audit log."""

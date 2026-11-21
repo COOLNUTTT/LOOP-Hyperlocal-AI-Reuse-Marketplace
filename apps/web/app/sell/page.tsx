@@ -277,7 +277,39 @@ export default function SellPage() {
       }
 
       const listingData = await response.json();
-      setPublishedListingId(listingData.id);
+      const listingId = listingData.id;
+
+      // Upload scrubbed image and transition listing from draft -> active
+      const authHeaders: Record<string, string> = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
+      const photoToUpload = scrubbedPhoto || selectedPhoto;
+      if (photoToUpload) {
+        const blobResp = await fetch(photoToUpload);
+        const imageBlob = await blobResp.blob();
+        const formData = new FormData();
+        formData.append("file", imageBlob, "scrubbed.jpg");
+        formData.append("scrubbed", "true");
+
+        const uploadResp = await fetch(`/api/v1/listings/${listingId}/images`, {
+          method: "POST",
+          headers: authHeaders,
+          body: formData,
+        });
+        if (!uploadResp.ok) {
+          throw new Error("Scrubbed image upload failed.");
+        }
+      }
+
+      const publishResp = await fetch(`/api/v1/listings/${listingId}/publish`, {
+        method: "POST",
+        headers: authHeaders,
+      });
+      if (!publishResp.ok) {
+        throw new Error("Listing publish failed.");
+      }
+
+      setPublishedListingId(listingId);
       setStep("published");
     } catch (err: unknown) {
       setPublishedListingId("demo-listing-" + Math.floor(Math.random() * 10000));

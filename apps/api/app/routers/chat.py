@@ -7,7 +7,7 @@ from typing import Annotated, Any, List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_db_user
 from app.dependencies.database import get_db
 from app.models.identity import User
 from app.schemas.chat import (
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 @router.post("/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 async def send_message(
     payload: MessageCreateRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Any:
     """Send a message to a seller or buyer. Rate-limited to 60/min."""
@@ -41,7 +41,7 @@ async def send_message(
 async def get_thread_messages(
     listing_id: uuid.UUID,
     other_user_id: Optional[uuid.UUID] = Query(None),
-    current_user: Annotated[Optional[User], Depends(get_current_user)] = None,
+    current_user: Annotated[Optional[User], Depends(get_current_db_user)] = None,
     db: Annotated[Optional[AsyncSession], Depends(get_db)] = None,
 ) -> List[Any]:
     """Get message history for a listing thread."""
@@ -58,7 +58,7 @@ async def get_thread_messages(
 @router.post("/report", response_model=ReportResponse)
 async def report_user(
     payload: ReportUserRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ReportResponse:
     """Report a suspicious user, message, or listing for scam or abuse."""

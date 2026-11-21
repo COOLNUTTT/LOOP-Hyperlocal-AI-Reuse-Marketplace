@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from ml.src.privacy_scrubber import PrivacyScrubberDetector
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_db_user
 from app.dependencies.database import get_db
 from app.models.identity import User
 
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/listings", tags=["scrubber-safeguard"])
 async def verify_listing_photo_scrub(
     listing_id: uuid.UUID,
     file: UploadFile = File(...),
-    current_user: Annotated[Optional[User], Depends(get_current_user)] = None,
+    current_user: Annotated[Optional[User], Depends(get_current_db_user)] = None,
     db: Annotated[Optional[AsyncSession], Depends(get_db)] = None,
 ) -> dict[str, Any]:
     """Server-side safeguard verifying uploaded images are free of unblurred faces/plates/IDs."""

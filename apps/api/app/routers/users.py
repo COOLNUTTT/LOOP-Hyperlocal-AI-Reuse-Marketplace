@@ -1,9 +1,13 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 """User profile and DPDP Act endpoints router."""
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.auth import AuthenticatedUser, get_current_user
+from app.dependencies.database import get_db
 from app.schemas.user import (
     UserDataExportResponse,
     UserDeleteResponse,
@@ -22,8 +26,9 @@ router = APIRouter(prefix="/users", tags=["users"])
 )
 async def get_me(
     current_user: AuthenticatedUser = Depends(get_current_user),
+    db: Optional[AsyncSession] = Depends(get_db),
 ) -> UserProfileResponse:
-    return await user_service.get_or_create_profile(current_user)
+    return await user_service.get_or_create_profile(current_user, db=db)
 
 
 @router.patch(
@@ -34,8 +39,9 @@ async def get_me(
 async def update_me(
     update_req: UserUpdateRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
+    db: Optional[AsyncSession] = Depends(get_db),
 ) -> UserProfileResponse:
-    return await user_service.update_profile(current_user, update_req)
+    return await user_service.update_profile(current_user, update_req, db=db)
 
 
 @router.get(
@@ -45,8 +51,9 @@ async def update_me(
 )
 async def export_me(
     current_user: AuthenticatedUser = Depends(get_current_user),
+    db: Optional[AsyncSession] = Depends(get_db),
 ) -> UserDataExportResponse:
-    return await user_service.export_data(current_user)
+    return await user_service.export_data(current_user, db=db)
 
 
 @router.delete(
@@ -56,5 +63,6 @@ async def export_me(
 )
 async def delete_me(
     current_user: AuthenticatedUser = Depends(get_current_user),
+    db: Optional[AsyncSession] = Depends(get_db),
 ) -> UserDeleteResponse:
-    return await user_service.delete_account(current_user)
+    return await user_service.delete_account(current_user, db=db)

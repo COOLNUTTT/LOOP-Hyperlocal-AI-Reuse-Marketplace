@@ -32,31 +32,39 @@ class SupabaseAdminService:
             "Content-Type": "application/json",
         }
 
-    async def purge_user_storage(self, auth_uid: str) -> None:
+    async def purge_user_storage(
+        self, auth_uid: str, listing_ids: Optional[list[str]] = None
+    ) -> None:
         """Purge all storage files and assets belonging to the user.
 
-        Hook for DPDP Act right to erasure compliance across all buckets.
+        Hook for DPDP Act right to erasure compliance across all buckets
+        (`{auth_uid}/` in avatars/listing-images and `listings/{listing_id}/` prefixes).
         """
         if not self.settings.supabase_url or not self.settings.supabase_service_role_key:
             logger.info("Storage purge hook invoked for user [SCRUBBED] (offline/mock mode)")
             return
 
-        buckets = ["avatars", "listing-images"]
+        bucket_prefixes: list[tuple[str, str]] = [
+            ("avatars", f"{auth_uid}/"),
+            ("listing-images", f"{auth_uid}/"),
+        ]
+        for lid in listing_ids or []:
+            bucket_prefixes.append(("listing-images", f"listings/{lid}/"))
+
         headers = self._get_headers()
 
         async with httpx.AsyncClient(timeout=10.0) as client:
-            for bucket in buckets:
+            for bucket, prefix in bucket_prefixes:
                 try:
-                    # List files in the user's folder
                     list_url = f"{self.settings.supabase_url}/storage/v1/object/list/{bucket}"
                     res = await client.post(
                         list_url,
                         headers=headers,
-                        json={"prefix": f"{auth_uid}/", "limit": 100},
+                        json={"prefix": prefix, "limit": 100},
                     )
                     if res.status_code == 200:
                         files = res.json()
-                        file_paths = [f"{auth_uid}/{f['name']}" for f in files if "name" in f]
+                        file_paths = [f"{prefix}{f['name']}" for f in files if "name" in f]
                         if file_paths:
                             delete_url = f"{self.settings.supabase_url}/storage/v1/object/{bucket}"
                             await client.request(

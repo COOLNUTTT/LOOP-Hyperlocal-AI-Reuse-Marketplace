@@ -34,8 +34,14 @@ export interface ScrubberWorkerResponse {
   modelCached: boolean;
 }
 
+interface WorkerGlobalScopeLike {
+  onmessage: ((event: MessageEvent<ScrubberWorkerRequest>) => void) | null;
+  postMessage: (message: ScrubberWorkerResponse) => void;
+}
+
 if (typeof self !== "undefined" && "onmessage" in self) {
-  self.onmessage = async (event: MessageEvent<ScrubberWorkerRequest>) => {
+  const workerScope = self as unknown as WorkerGlobalScopeLike;
+  workerScope.onmessage = async (event: MessageEvent<ScrubberWorkerRequest>) => {
     const req = event.data;
     if (!req || req.type !== "RUN_ONNX_INFERENCE") return;
 
@@ -85,6 +91,6 @@ if (typeof self !== "undefined" && "onmessage" in self) {
       modelCached: fromCache,
     };
 
-    self.postMessage(response);
+    workerScope.postMessage(response);
   };
 }

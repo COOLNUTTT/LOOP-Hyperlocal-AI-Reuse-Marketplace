@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 """Smart autofill specification and template generator for campus reuse items."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 SPECIFICATION_TEMPLATES: Dict[str, Dict[str, Any]] = {
     # Electronics

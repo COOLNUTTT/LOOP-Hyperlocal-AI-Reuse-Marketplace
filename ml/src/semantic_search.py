@@ -13,7 +13,7 @@ import hashlib
 import math
 import re
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 TEXT_EMBED_DIM = 384
 IMAGE_EMBED_DIM = 512

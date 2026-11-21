@@ -1,17 +1,19 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 """Database session dependency for FastAPI routes."""
 
+import importlib.util
 from typing import AsyncGenerator, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import settings
 
-# If no DB URL configured in environment, fallback to None
+# If no DB URL configured in environment or greenlet unavailable, fallback to None
 engine = None
 async_session_factory = None
+HAS_GREENLET = importlib.util.find_spec("greenlet") is not None
 
-if hasattr(settings, "database_url") and settings.database_url:
+if HAS_GREENLET and hasattr(settings, "database_url") and settings.database_url:
     engine = create_async_engine(settings.database_url, echo=False)
     async_session_factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 

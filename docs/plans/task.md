@@ -104,3 +104,7 @@
 | p21-task-2| Free-tier deployment manifests (`setup_storage_and_realtime.sql`, `render.yaml`, `vercel.json`)| completed | Ready for Supabase + Render + Vercel free-tier deployment       |
 | p21-task-3| Deployment & 30–50 student user-study runbook (`DEPLOYMENT_AND_USER_STUDY_RUNBOOK.md`)| completed | End-to-end cloud deployment & counterbalanced study guide       |
 | p21-task-4| Phase 21 acceptance tests (`test_phase21_deployment_and_study_ingest.py`)| completed | All 22 multi-phase acceptance tests, ruff, and audits passed    |
+| p22-task-1| `get_current_db_user` + `db` injection & `greenlet` guard        | completed | Fixes `AuthenticatedUser` crashes & DB persistence across routers|
+| p22-task-2| Next.js `/api/v1` rewrites, `/sell` publish flow & worker TS     | completed | Fixes frontend API routing, draft->active flow & `tsc` error    |
+| p22-task-3| `/api/v1/health`, Locust swap route, DPDP purge & lint/mypy fixes| completed | Zero ruff, black, or mypy errors across entire codebase         |
+| p22-task-4| Phase 22 regression tests (`test_phase22_bugfixes.py`) & commit  | completed | Full test suite (`116 passed, 1 skipped`) & audits green        |

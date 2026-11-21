@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_db_user
 from app.dependencies.database import get_db
 from app.models.identity import User
 from app.models.saved_search import SavedSearch
@@ -38,7 +38,7 @@ class SavedSearchResponse(BaseModel):
 @router.post("", response_model=SavedSearchResponse, status_code=status.HTTP_201_CREATED)
 async def create_saved_search(
     payload: SavedSearchCreateRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> SavedSearch:
     """Save a search query with parsed filters and 384-d embedding for alerts."""
@@ -65,7 +65,7 @@ async def create_saved_search(
 
 @router.get("", response_model=list[SavedSearchResponse])
 async def list_saved_searches(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[SavedSearch]:
     """List current user's saved searches."""
@@ -81,7 +81,7 @@ async def list_saved_searches(
 @router.delete("/{search_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_saved_search(
     search_id: uuid.UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
     """Delete a saved search owned by the current user."""

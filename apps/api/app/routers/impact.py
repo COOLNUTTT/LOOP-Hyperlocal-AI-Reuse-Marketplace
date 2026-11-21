@@ -8,7 +8,7 @@ from ml.src.impact_estimator import aggregate_impact_summary
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_db_user
 from app.dependencies.database import get_db
 from app.models.identity import User
 from app.models.listing import Listing
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/impact", tags=["impact"])
 
 @router.get("/me")
 async def get_my_impact(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """Return personal reuse environmental impact ranges, LCA sources, and sensitivity table."""
@@ -40,7 +40,7 @@ async def get_my_impact(
 
 @router.get("/community")
 async def get_community_impact(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """Return community-wide reuse environmental impact ranges and sensitivity analysis."""

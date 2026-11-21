@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from ml.src.semantic_search import parse_natural_query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_db_user
 from app.dependencies.database import get_db
 from app.models.identity import User
 from app.schemas.listing import (
@@ -109,7 +109,7 @@ async def list_listings(
 @router.post("", response_model=ListingDetailResponse, status_code=status.HTTP_201_CREATED)
 async def create_listing(
     payload: ListingCreateRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ListingDetailResponse:
     """Create a new listing draft."""
@@ -131,7 +131,7 @@ async def get_listing(
 async def update_listing(
     listing_id: uuid.UUID,
     payload: ListingUpdateRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ListingDetailResponse:
     """Update listing details and record active learning corrections if AI predictions changed."""
@@ -147,7 +147,7 @@ async def update_listing(
 @router.post("/{listing_id}/publish", response_model=PublishListingResponse)
 async def publish_listing(
     listing_id: uuid.UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_db_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> PublishListingResponse:
     """Publish a listing. Fails with 400 if any image is unscrubbed."""
@@ -164,7 +164,7 @@ async def upload_listing_image(
     listing_id: uuid.UUID,
     file: UploadFile = File(...),
     scrubbed: bool = Form(False),
-    current_user: Annotated[Optional[User], Depends(get_current_user)] = None,
+    current_user: Annotated[Optional[User], Depends(get_current_db_user)] = None,
     db: Annotated[Optional[AsyncSession], Depends(get_db)] = None,
 ) -> ListingImageResponse:
     """Upload an image, validate format/size, strip EXIF metadata, and attach to listing."""

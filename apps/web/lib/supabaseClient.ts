@@ -78,7 +78,11 @@ const SCAM_PATTERNS: Array<{ rule: string; regex: RegExp; warning: string }> = [
 export function getSupabaseConfig(): SupabaseRuntimeConfig {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  const rawBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(
+    /\/api\/v1\/?$/,
+    ""
+  );
+  const apiUrl = `${rawBase.replace(/\/$/, "")}/api/v1`;
   const isLiveConfigured =
     Boolean(supabaseUrl) &&
     Boolean(supabaseAnonKey) &&

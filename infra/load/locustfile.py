@@ -93,10 +93,10 @@ class LOOPMarketplaceUser(HttpUser):
             self.client.get("/api/v1/ai/onnx-status")
 
     @task(1)
-    def enumerate_swap_cycles(self) -> None:
-        """Algorithmic <=3-way barter cycle enumeration."""
+    def enumerate_swap_proposals(self) -> None:
+        """Algorithmic <=3-way barter swap proposals endpoint."""
         if self.client is not None:
-            self.client.get("/api/v1/swap/cycles")
+            self.client.get("/api/v1/swap/proposals")
 
 
 def get_registered_load_tasks() -> List[Dict[str, Any]]:

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" width="900" height="360">
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <text x="450" y="26" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#0f172a">User-Study Analysis Pipeline Verification — Simulated Cohort (data_origin='simulated') | Live Study: TBD</text>
+  <rect x="60" y="55" width="230" height="215" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="175" y="45" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1e293b">1. Listing Time (s) — Simulated</text>
+  <rect x="100" y="195" width="50" height="65" fill="#16a34a" />
+  <rect x="190" y="85" width="50" height="175" fill="#94a3b8" />
+  <text x="125" y="188" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#166534">47.2s (AI)</text>
+  <text x="215" y="78" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#475569">153.1s (Manual)</text>
+  <rect x="335" y="55" width="230" height="215" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="450" y="45" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1e293b">2. Trust (1-7 Likert) — Simulated</text>
+  <rect x="375" y="95" width="50" height="165" fill="#2563eb" />
+  <rect x="465" y="150" width="50" height="110" fill="#94a3b8" />
+  <text x="400" y="88" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#1d4ed8">5.86/7 (Explained)</text>
+  <text x="490" y="143" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#475569">4.33/7 (Black-Box)</text>
+  <rect x="610" y="55" width="230" height="215" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="725" y="45" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1e293b">3. SUS Score (0-100) — Simulated</text>
+  <rect x="695" y="92" width="60" height="168" fill="#0d9488" />
+  <text x="725" y="84" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#0f766e">82.8 / 100</text>
+  <text x="450" y="310" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#0f172a">Caption: Simulated Power-Analysis Cohort (N=40 synthetic profiles, data_origin='simulated', seed=42)</text>
+  <text x="450" y="332" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#64748b">Honesty Notice (AGENTS.md §8): Live human student study measurements are marked TBD pending in-person participant sessions.</text>
+</svg>

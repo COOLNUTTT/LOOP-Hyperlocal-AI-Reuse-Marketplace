@@ -1,0 +1,18 @@
+{
+  "run_id": "phase18_val_55bf0f1a",
+  "data_origin": "simulated",
+  "journeys": {
+    "journey_1_snap_to_list": true,
+    "journey_2_find_and_buy": true,
+    "journey_3_swap_and_impact": true,
+    "journey_4_fraud_and_moderation": true,
+    "all_passed": true
+  },
+  "load_benchmark": {
+    "iterations": 50,
+    "p50_latency_ms": 0.139,
+    "p95_latency_ms": 0.159,
+    "target_p95_ms": 1000.0,
+    "throughput_ops_per_sec": 6939.2
+  }
+}

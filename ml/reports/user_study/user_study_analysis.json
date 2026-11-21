@@ -1,0 +1,48 @@
+{
+  "live_human_study_status": "TBD (not yet measured on live participants)",
+  "live_human_metrics": {
+    "listing_time_with_ai_s": "TBD (not yet measured)",
+    "listing_time_without_ai_s": "TBD (not yet measured)",
+    "sus_score": "TBD (not yet measured)",
+    "trust_with_explanations": "TBD (not yet measured)",
+    "trust_without_explanations": "TBD (not yet measured)"
+  },
+  "simulated_power_analysis_cohort": {
+    "data_origin": "simulated",
+    "seed": 42,
+    "n_synthetic_participants": 40,
+    "listing_time_seconds": {
+      "n": 40.0,
+      "mean_treatment": 47.222,
+      "mean_control": 153.116,
+      "mean_difference": -105.894,
+      "sd_difference": 21.696,
+      "ci95_low": -112.617,
+      "ci95_high": -99.17,
+      "paired_t_stat": -30.869,
+      "p_value_two_sided": 1e-12,
+      "cohens_d": -4.881,
+      "wilcoxon_w": 0.0,
+      "wilcoxon_z": -5.511
+    },
+    "trust_likert_1_to_7": {
+      "n": 40.0,
+      "mean_treatment": 5.856,
+      "mean_control": 4.327,
+      "mean_difference": 1.528,
+      "sd_difference": 0.967,
+      "ci95_low": 1.229,
+      "ci95_high": 1.828,
+      "paired_t_stat": 9.999,
+      "p_value_two_sided": 1e-12,
+      "cohens_d": 1.581,
+      "wilcoxon_w": 2.0,
+      "wilcoxon_z": 5.484
+    },
+    "sus_score_0_to_100": {
+      "mean": 82.75,
+      "std": 4.97,
+      "benchmark_threshold": 68.0
+    }
+  }
+}

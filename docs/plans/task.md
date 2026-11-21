@@ -80,3 +80,8 @@
 | p17-task-3| Agent-based simulator (`sim/`), 6 experiments & +/-50% sensitivity| completed | Same seed -> identical results; SVG captioned `Synthetic`       |
 | p17-task-4| `POST /ai/price-drop/{listing_id}` & `PriceDropSuggestionCard` UI | completed | Labelled Algorithmic Hazard Heuristic on seller listing page    |
 | p17-task-5| Acceptance tests & Phase 17 completion report                     | completed | All Phase 17 acceptance tests and CI checks passed (M3 done)    |
+| p18-task-1| 3-journey E2E validation, p50/p95 benchmark & AGPL/GPL licence audit | completed | Zero AGPL/GPL; 100% copyright headers; 9 RLS migrations         |
+| p18-task-2| Reproducible user-study analysis (t-test/Wilcoxon/SUS) & 5 ablations | completed | Live human metrics marked TBD; synthetic cohort labelled        |
+| p18-task-3| Master figure generator (`make_figures.py`), 6 model cards & demo script | completed | All 8 figures hashed in `ml/reports/figure_manifest.json`       |
+| p18-task-4| Paper draft (`PAPER_DRAFT.md`), claim audit & copyright filing package | completed | Complete 10-section paper & Indian Copyright Office package     |
+| p18-task-5| Acceptance tests & Phase 18 completion report (Milestone M4 done) | completed | All Phase 18 acceptance tests and CI checks passed              |

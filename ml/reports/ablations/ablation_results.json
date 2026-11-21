@@ -1,0 +1,50 @@
+{
+  "data_origin": "simulated",
+  "ablations": [
+    {
+      "ablation_id": "ablation_1_remove_semantic_search",
+      "component_removed": "Multilingual Semantic Search + Query Parser (-> Postgres FTS baseline)",
+      "primary_metric": "Hinglish NDCG@10 / Recall@5",
+      "full_system_value": "NDCG@10 = 0.9852, Recall@5 = 1.0000",
+      "ablated_value": "NDCG@10 = 0.8400, Recall@5 = 0.8000",
+      "relative_impact": "-14.7% NDCG@10 on Hinglish code-mixed queries (Phase 12 logged run)",
+      "data_origin": "simulated"
+    },
+    {
+      "ablation_id": "ablation_2_remove_ai_listing_draft",
+      "component_removed": "Snap-to-List AI Recognition + Smart Autofill (-> Manual form entry)",
+      "primary_metric": "Listing Creation Time (seconds)",
+      "full_system_value": "47.2 s (simulated cohort) / TBD (live)",
+      "ablated_value": "153.1 s (simulated cohort) / TBD (live)",
+      "relative_impact": "-68.9% listing time reduction in simulated power cohort (live: TBD)",
+      "data_origin": "simulated"
+    },
+    {
+      "ablation_id": "ablation_3_remove_explanations",
+      "component_removed": "Grad-CAM Heatmap + Plain-Language SHAP + Conformal Bounds (-> Point output)",
+      "primary_metric": "User Trust Rating (1-7 Likert)",
+      "full_system_value": "5.86 / 7.0 (simulated cohort) / TBD (live)",
+      "ablated_value": "4.33 / 7.0 (simulated cohort) / TBD (live)",
+      "relative_impact": "+1.65 Likert point trust lift in simulated power cohort (live: TBD)",
+      "data_origin": "simulated"
+    },
+    {
+      "ablation_id": "ablation_4_remove_privacy_scrubber",
+      "component_removed": "On-Device Canvas Privacy Scrubber + /scrub-verify (-> Unscrubbed upload)",
+      "primary_metric": "Residual PII Leak Rate (%)",
+      "full_system_value": "1.8% residual leak rate (98.2% sensitive region recall, Phase 7 run)",
+      "ablated_value": "100.0% PII leak rate on photos containing faces/IDs/phones",
+      "relative_impact": "-98.2 percentage point reduction in PII exposure",
+      "data_origin": "simulated"
+    },
+    {
+      "ablation_id": "ablation_5_remove_active_learning",
+      "component_removed": "Human-in-the-Loop Active Learning Corrections (-> Static 20% seed model)",
+      "primary_metric": "Recognition Top-1 / Condition QWK / Price MAPE",
+      "full_system_value": "Top-1 = 0.9163, QWK = 0.7999, MAPE = 14.87% (at 400 corrections)",
+      "ablated_value": "Top-1 = 0.7854, QWK = 0.6406, MAPE = 22.42% (0 corrections)",
+      "relative_impact": "+13.09% Top-1 lift, +0.1593 QWK lift, -7.55% MAPE reduction (Phase 15 run)",
+      "data_origin": "simulated"
+    }
+  ]
+}

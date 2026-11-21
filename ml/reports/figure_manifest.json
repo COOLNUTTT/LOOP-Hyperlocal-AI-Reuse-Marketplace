@@ -1,0 +1,87 @@
+{
+  "paper_tag": "paper-v1",
+  "reproducible": true,
+  "all_figures_present": true,
+  "figures": [
+    {
+      "figure_number": 1,
+      "title": "Active learning: accuracy/QWK/MAPE vs corrections (3 strategies, 5-seed error bands)",
+      "phase": "Phase 15",
+      "generator_script": "ml/src/eval_active_learning.py",
+      "artifact_path": "ml/reports/active_learning/active_learning_curves_synthetic.svg",
+      "data_origin": "simulated",
+      "sha256": "d8be6cdfc9673ecc201ab8328e252094d8b3d48123f4c160e22506ea36f71802",
+      "exists": true
+    },
+    {
+      "figure_number": 2,
+      "title": "On-device vs server latency + size/upload trade-off",
+      "phase": "Phase 7",
+      "generator_script": "ml/src/quality_checker.py",
+      "artifact_path": "ml/reports/ondevice_vs_server/report.md",
+      "data_origin": "simulated",
+      "sha256": "d9d1f488d3bc7526b373dc6c2c10b8ce06f62ce07af8073c340971b381371d50",
+      "exists": true
+    },
+    {
+      "figure_number": 3,
+      "title": "Scrubber per-class recall/precision + residual leak rate",
+      "phase": "Phase 7",
+      "generator_script": "ml/src/privacy_scrubber.py",
+      "artifact_path": "ml/model_cards/privacy_scrubber.md",
+      "data_origin": "simulated",
+      "sha256": "3f8c078ccd8bd3867a6581e4b14723a2bb99d75feb1e8162adb7a996fdf60ea4",
+      "exists": true
+    },
+    {
+      "figure_number": 4,
+      "title": "Price: split-conformal 80% interval coverage + plain-language SHAP",
+      "phase": "Phase 10",
+      "generator_script": "ml/src/price_estimator.py",
+      "artifact_path": "ml/model_cards/price_estimator.md",
+      "data_origin": "simulated",
+      "sha256": "8d6353786234b8275106835158c8bef42f8ebc67dac76af9f53d70cac5e25e79",
+      "exists": true
+    },
+    {
+      "figure_number": 5,
+      "title": "Condition grading: confusion matrix, QWK + Grad-CAM saliency",
+      "phase": "Phase 9",
+      "generator_script": "ml/src/condition_grader.py",
+      "artifact_path": "ml/model_cards/condition_grader.md",
+      "data_origin": "simulated",
+      "sha256": "aa569d81772803cc9b656072cb00c44f499ba6a026413b81184103fdd02ff7e7",
+      "exists": true
+    },
+    {
+      "figure_number": 6,
+      "title": "Semantic search: Recall@k and NDCG@10 vs FTS baseline (English vs Hinglish)",
+      "phase": "Phase 12",
+      "generator_script": "ml/src/eval_semantic_search.py",
+      "artifact_path": "ml/reports/semantic_search/report.md",
+      "data_origin": "simulated",
+      "sha256": "d4649c6e8b7e1b49f099a59051b3c664c9f9c4859a24ab997f66c3eab0b9e7e8",
+      "exists": true
+    },
+    {
+      "figure_number": 7,
+      "title": "Simulator: swap scaling (100->10k), trust AUC, fraud PR curves, price-drop TTS",
+      "phase": "Phase 17",
+      "generator_script": "sim/simulator.py",
+      "artifact_path": "ml/reports/simulator/simulator_figures_synthetic.svg",
+      "data_origin": "simulated",
+      "sha256": "71b610f99790528601c5951662f5bfea86e41bb6b2b0b65d3b47c8af640e7d98",
+      "exists": true
+    },
+    {
+      "figure_number": 8,
+      "title": "User-study statistical pipeline verification (Simulated cohort; Live study: TBD)",
+      "phase": "Phase 18",
+      "generator_script": "ml/src/eval_user_study_and_ablations.py",
+      "artifact_path": "ml/reports/user_study/user_study_figure_synthetic.svg",
+      "data_origin": "simulated",
+      "sha256": "4897b67b8fa6306391939ad67bddba5481221157ce999d2fd9f93767a9a34b39",
+      "exists": true
+    }
+  ]
+}

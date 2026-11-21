@@ -20,6 +20,8 @@ Implements ROADMAP.md Phase 18, ML_SPEC.md §14, and PAPER_PLAN.md §5–§6:
 
 from __future__ import annotations
 
+import argparse
+import csv
 import json
 import math
 import random
@@ -28,6 +30,91 @@ from typing import Any, Dict, List
 
 USER_STUDY_DIR = Path(__file__).resolve().parents[1] / "reports" / "user_study"
 ABLATIONS_DIR = Path(__file__).resolve().parents[1] / "reports" / "ablations"
+
+PROHIBITED_PII_COLUMNS = {
+    "name",
+    "full_name",
+    "student_name",
+    "email",
+    "phone",
+    "phone_number",
+    "mobile",
+    "roll_no",
+    "roll_number",
+    "student_id",
+    "prn",
+    "address",
+}
+REQUIRED_STUDY_COLUMNS = {
+    "participant_anon_id",
+    "time_ai_sec",
+    "time_manual_sec",
+    "trust_explained_1_7",
+    "trust_blackbox_1_7",
+    "sus_score_0_100",
+    "data_origin",
+}
+
+
+def analyze_user_study_csv(csv_path: Path) -> Dict[str, Any]:
+    """Ingest an anonymised user-study CSV, enforce zero PII headers, and compute paired stats."""
+    if not csv_path.exists():
+        raise FileNotFoundError(f"User study CSV not found: {csv_path}")
+
+    with csv_path.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        fieldnames = [h.strip() for h in (reader.fieldnames or [])]
+        lower_fields = {h.lower() for h in fieldnames}
+
+        forbidden_found = sorted(lower_fields & PROHIBITED_PII_COLUMNS)
+        if forbidden_found:
+            raise ValueError(
+                f"PII_COLUMN_PROHIBITED: Anonymised user-study CSV must not contain identifier columns: {forbidden_found}"
+            )
+
+        missing_cols = sorted(REQUIRED_STUDY_COLUMNS - lower_fields)
+        if missing_cols:
+            raise ValueError(f"Missing required user-study columns: {missing_cols}")
+
+        rows = list(reader)
+
+    if len(rows) < 2:
+        raise ValueError("User-study CSV must contain at least 2 participant rows for paired tests.")
+
+    times_ai = [float(r["time_ai_sec"]) for r in rows]
+    times_manual = [float(r["time_manual_sec"]) for r in rows]
+    trust_exp = [float(r["trust_explained_1_7"]) for r in rows]
+    trust_bb = [float(r["trust_blackbox_1_7"]) for r in rows]
+    sus_scores = sorted(float(r["sus_score_0_100"]) for r in rows)
+    origins = sorted({str(r["data_origin"]).strip() for r in rows})
+
+    time_stats = compute_paired_statistics(times_ai, times_manual)
+    trust_stats = compute_paired_statistics(trust_exp, trust_bb)
+
+    n_rows = len(sus_scores)
+    sus_mean = round(sum(sus_scores) / n_rows, 2)
+    sus_sd = round(
+        math.sqrt(sum((s - sus_mean) ** 2 for s in sus_scores) / max(1, n_rows - 1)),
+        2,
+    )
+    sus_median = round(sus_scores[n_rows // 2], 2)
+    sus_iqr = round(sus_scores[int(n_rows * 0.75)] - sus_scores[int(n_rows * 0.25)], 2)
+
+    return {
+        "csv_file": str(csv_path.name),
+        "n_participants": n_rows,
+        "data_origin": origins[0] if len(origins) == 1 else "mixed",
+        "pii_check_passed": True,
+        "listing_time_seconds": time_stats,
+        "trust_likert_1_to_7": trust_stats,
+        "sus_score_0_to_100": {
+            "mean": sus_mean,
+            "std": sus_sd,
+            "median": sus_median,
+            "iqr": sus_iqr,
+            "benchmark_threshold": 68.0,
+        },
+    }
 
 
 def compute_paired_statistics(
@@ -304,4 +391,16 @@ def run_user_study_analysis_and_ablations(seed: int = 42, n_participants: int = 
 
 
 if __name__ == "__main__":
-    run_user_study_analysis_and_ablations()
+    parser = argparse.ArgumentParser(description="Run LOOP user-study statistical pipeline & ablations.")
+    parser.add_argument(
+        "--csv",
+        type=Path,
+        default=None,
+        help="Optional path to anonymised user-study CSV file.",
+    )
+    args = parser.parse_args()
+    if args.csv is not None:
+        csv_result = analyze_user_study_csv(args.csv)
+        print(json.dumps(csv_result, indent=2))
+    else:
+        run_user_study_analysis_and_ablations()

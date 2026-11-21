@@ -100,3 +100,7 @@
 | p20-task-3| Interactive geohash-5 `CoarseAreaMap.tsx` with ODbL attribution    | completed | Zoomable `11x-14x` coarse map (`geohash5 <= 5`) wired to `/browse`|
 | p20-task-4| Playwright 360px E2E suite & Locust load profile (`locustfile.py`) | completed | Covers all 4 journeys at 360px viewport + `<1000ms` p95 SLA     |
 | p20-task-5| Phase 20 acceptance tests (`test_phase20_hardening_and_e2e.py`)    | completed | All 5 Phase 20 tests, ruff, and 160-file header audit passed    |
+| p21-task-1| Anonymised user-study CSV template & PII-guarded `analyze_user_study_csv`| completed | Rejects `name`/`email`/`phone`/`roll_no` with `PII_COLUMN_PROHIBITED`|
+| p21-task-2| Free-tier deployment manifests (`setup_storage_and_realtime.sql`, `render.yaml`, `vercel.json`)| completed | Ready for Supabase + Render + Vercel free-tier deployment       |
+| p21-task-3| Deployment & 30–50 student user-study runbook (`DEPLOYMENT_AND_USER_STUDY_RUNBOOK.md`)| completed | End-to-end cloud deployment & counterbalanced study guide       |
+| p21-task-4| Phase 21 acceptance tests (`test_phase21_deployment_and_study_ingest.py`)| completed | All 22 multi-phase acceptance tests, ruff, and audits passed    |

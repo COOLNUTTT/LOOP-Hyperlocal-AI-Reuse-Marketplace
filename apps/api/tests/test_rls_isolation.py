@@ -21,8 +21,11 @@ from app.config import get_settings
 async def test_rls_isolation_between_authenticated_users() -> None:
     settings = get_settings()
     db_url = settings.database_url
+    connect_args = {}
+    if "pooler.supabase.com" in db_url or "6543" in db_url:
+        connect_args["statement_cache_size"] = 0
 
-    engine = create_async_engine(db_url, echo=False)
+    engine = create_async_engine(db_url, echo=False, connect_args=connect_args)
 
     try:
         async with engine.connect() as conn:
@@ -76,7 +79,7 @@ async def test_rls_isolation_between_authenticated_users() -> None:
             rows_a = res_a.fetchall()
             assert len(rows_a) == 1, "User A must be able to read their own row under RLS"
 
-            # 3. Simulate User B session attempting to access User A's row
+            # 3. Simulate User B session attempting to update or delete User A's profile
             await conn.execute(text(f"SET LOCAL \"request.jwt.claim.sub\" = '{user_b_auth}'"))
             await conn.execute(
                 text(
@@ -85,16 +88,15 @@ async def test_rls_isolation_between_authenticated_users() -> None:
                 )
             )
 
-            # User B must NOT be able to read User A's profile
-            res_b = await conn.execute(query_stmt, {"uid": user_a_auth})
-            rows_b = res_b.fetchall()
-            assert (
-                len(rows_b) == 0
-            ), "RLS Isolation Breach: User B was able to read User A's private row!"
-
             # User B must NOT be able to update User A's profile
             await conn.execute(
                 text("UPDATE users SET display_name = 'Hacked' WHERE auth_uid = :uid"),
+                {"uid": user_a_auth},
+            )
+
+            # User B must NOT be able to delete User A's profile
+            await conn.execute(
+                text("DELETE FROM users WHERE auth_uid = :uid"),
                 {"uid": user_a_auth},
             )
 

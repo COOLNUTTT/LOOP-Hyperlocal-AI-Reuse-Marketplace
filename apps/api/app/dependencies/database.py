@@ -15,7 +15,10 @@ async_session_factory = None
 HAS_GREENLET = importlib.util.find_spec("greenlet") is not None
 
 if HAS_GREENLET and hasattr(settings, "database_url") and settings.database_url:
-    engine = create_async_engine(settings.database_url, echo=False)
+    connect_args = {}
+    if "pooler.supabase.com" in settings.database_url or "6543" in settings.database_url:
+        connect_args["statement_cache_size"] = 0
+    engine = create_async_engine(settings.database_url, echo=False, connect_args=connect_args)
     async_session_factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 

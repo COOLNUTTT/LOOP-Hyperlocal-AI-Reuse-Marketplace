@@ -2,7 +2,7 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
@@ -15,8 +15,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Dynamically set database URL from app settings
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Dynamically set database URL from app settings (prefer direct_url for DDL if present)
+db_url = getattr(settings, "direct_url", None) or settings.database_url
+config.set_main_option("sqlalchemy.url", db_url)
 
 target_metadata = Base.metadata
 
@@ -37,17 +38,26 @@ def run_migrations_offline() -> None:
 
 def do_run_migrations(connection: Connection) -> None:
     """Helper to execute migrations synchronously on an async connection."""
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        version_table_pk=False,
+    )
+    # Ensure alembic_version has sufficient length for descriptive revision names
+    connection.execute(text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(128) NOT NULL PRIMARY KEY);"))
+    connection.execute(text("ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(128);"))
     with context.begin_transaction():
         context.run_migrations()
 
 
 async def run_async_migrations() -> None:
     """Run migrations using an AsyncEngine."""
+    section = config.get_section(config.config_ini_section, {})
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"statement_cache_size": 0},
     )
 
     async with connectable.connect() as connection:

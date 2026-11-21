@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     debug: bool = True
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:54322/postgres"
+    direct_url: str = ""
 
     # Supabase configuration
     supabase_url: str = ""
@@ -25,7 +26,7 @@ class Settings(BaseSettings):
     college_domain: str = "adypu.edu.in"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env", "../../.env", "c:/loop-main/loop/.env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )

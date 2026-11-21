@@ -17,6 +17,7 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import FairDealBadge from "@/components/FairDealBadge";
+import CoarseAreaMap from "@/components/CoarseAreaMap";
 
 // Initial realistic demo items aligned with scripts/seed.py
 const INITIAL_LISTINGS = [
@@ -349,43 +350,11 @@ export default function BrowsePage() {
 
           {/* Coarse Map View */}
           {viewMode === "map" && (
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">Neighbourhood Cluster Map</h3>
-                  <p className="text-xs text-slate-500">
-                    Pins represent approximate ~5km² zones. No exact street addresses are ever broadcast.
-                  </p>
-                </div>
-                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 border border-emerald-200">
-                  PostGIS Coarse Clustering
-                </span>
-              </div>
-
-              {/* Visual Coarse Map Area */}
-              <div className="relative h-80 w-full overflow-hidden rounded-xl bg-slate-900 flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px] opacity-40" />
-
-                <div className="relative z-10 grid w-full max-w-lg grid-cols-1 gap-3 sm:grid-cols-3">
-                  {COARSE_AREAS.map((area) => (
-                    <div
-                      key={area.name}
-                      onClick={() => setSelectedArea(area.name)}
-                      className="cursor-pointer rounded-xl border border-slate-700 bg-slate-800/90 p-3.5 backdrop-blur hover:border-emerald-500 transition-all text-center"
-                    >
-                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
-                        <MapPin className="h-5 w-5" />
-                      </div>
-                      <h4 className="mt-2 text-xs font-bold text-white line-clamp-1">{area.name}</h4>
-                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">Geohash: {area.geohash5}</p>
-                      <span className="mt-2 inline-block rounded-full bg-emerald-950 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-800/50">
-                        {area.count} active items
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <CoarseAreaMap
+              areas={COARSE_AREAS}
+              selectedArea={selectedArea}
+              onSelectArea={(areaName) => setSelectedArea(areaName)}
+            />
           )}
         </div>
       </div>

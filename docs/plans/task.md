@@ -95,3 +95,8 @@
 | p2-task-2 | Dataset licences (`ml/data/LICENSES.md`) & 50-query/price templates| completed | 25 EN + 25 Hinglish queries & price/scrub CSV templates         |
 | p2-task-3 | Deterministic phash dedupe (`Hamming<=6`), `70/15/15` split & kappa| completed | Atomic listing-level split (`QWK=0.9507`) & zero cross-split dup|
 | p2-task-4 | Phase 2 acceptance tests (`test_phase02_data_pipeline.py`) & report| completed | All 4 Phase 2 acceptance tests, ruff, and licence audits passed |
+| p20-task-1| Log OpenStreetMap (`ODbL`), `@playwright/test` & `locust` licences | completed | All permissive licences logged in `THIRD_PARTY_LICENSES.md`     |
+| p20-task-2| Supabase Storage/Realtime client (`supabaseClient.ts`) & chat alerts| completed | Enforces `LISTING_NOT_SCRUBBED` guard & UPI QR scam warnings    |
+| p20-task-3| Interactive geohash-5 `CoarseAreaMap.tsx` with ODbL attribution    | completed | Zoomable `11x-14x` coarse map (`geohash5 <= 5`) wired to `/browse`|
+| p20-task-4| Playwright 360px E2E suite & Locust load profile (`locustfile.py`) | completed | Covers all 4 journeys at 360px viewport + `<1000ms` p95 SLA     |
+| p20-task-5| Phase 20 acceptance tests (`test_phase20_hardening_and_e2e.py`)    | completed | All 5 Phase 20 tests, ruff, and 160-file header audit passed    |

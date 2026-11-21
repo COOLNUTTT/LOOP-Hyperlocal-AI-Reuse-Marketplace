@@ -1,13 +1,24 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
-"""Price Estimator with Split-Conformal Calibration & SHAP Explainability.
+"""Price Estimator with Split-Conformal Calibration & SHAP Explainability (ONNX Engine).
 
-Implements LightGBM-style quantile regression (q=0.1, 0.5, 0.9) calibrated
-with split-conformal intervals guaranteeing nominal 80% coverage on campus items,
-along with plain-language SHAP feature contributions.
+Implements LightGBM-style quantile regression (`q=0.1, 0.5, 0.9`) backed by
+`price_quantile_lgbm.onnx` and calibrated with split-conformal intervals
+guaranteeing nominal 80% coverage on campus items, along with plain-language
+SHAP feature contributions. Reads thresholds from `ml/configs/thresholds.yaml`.
 """
 
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
+
+from ml.src.config_loader import load_thresholds
+from ml.src.onnx_exporter import (
+    EXPORTS_DIR,
+    execute_onnx_graph_tensors,
+    export_all_onnx_models,
+    parse_onnx_graph_spec,
+)
 
 # Base valuation reference lookup (Median prior per subtype)
 SUBTYPE_MEDIANS = {
@@ -66,11 +77,25 @@ CONDITION_FACTORS = {
 
 
 class PriceEstimatorModel:
-    def __init__(self, conformal_alpha: float = 0.20):
-        # 1 - alpha = 0.80 nominal coverage (80% confidence interval)
-        self.alpha = conformal_alpha
-        # Conformal calibration adjustment factor computed on calibration set
-        self.conformal_scale = 1.12
+    """Split-conformal quantile price estimator backed by `price_quantile_lgbm.onnx`."""
+
+    def __init__(self, conformal_alpha: Optional[float] = None) -> None:
+        cfg = load_thresholds()["price_estimator"]
+        self.alpha = float(
+            conformal_alpha if conformal_alpha is not None else cfg.get("conformal_alpha", 0.20)
+        )
+        self.conformal_scale = float(cfg.get("conformal_scale", 1.12))
+        self.known_spread = float(cfg.get("known_subtype_spread", 0.22))
+        self.unknown_spread = float(cfg.get("unknown_subtype_spread", 0.45))
+        self._onnx_spec: Optional[Dict[str, Any]] = None
+
+    def _get_onnx_spec(self) -> Dict[str, Any]:
+        if self._onnx_spec is None:
+            onnx_path = EXPORTS_DIR / "price_quantile_lgbm.onnx"
+            if not onnx_path.exists():
+                export_all_onnx_models()
+            self._onnx_spec = parse_onnx_graph_spec(onnx_path.read_bytes())
+        return self._onnx_spec
 
     def estimate_price(
         self,
@@ -80,7 +105,7 @@ class PriceEstimatorModel:
         condition: str = "good",
         attributes: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Estimate calibrated price bounds [low, likely, high] and plain-language SHAP reasons."""
+        """Estimate calibrated price bounds `[low, likely, high]` via `price_quantile_lgbm.onnx`."""
         category_norm = category.lower().strip()
         subtype_norm = subtype.lower().strip() if subtype else ""
         brand_norm = brand.lower().strip() if brand else ""
@@ -93,45 +118,61 @@ class PriceEstimatorModel:
             base_median = CATEGORY_FALLBACK_MEDIANS.get(category_norm, Decimal("800.00"))
             is_unknown_subtype = True
 
-        # Apply feature adjustments
         shap_reasons = []
 
         # 1. Brand contribution
         brand_multiplier = BRAND_PREMIUMS.get(brand_norm, 1.00)
-        if brand_multiplier > 1.0:
+        if brand_multiplier > 1.0 and brand:
             pct = int((brand_multiplier - 1.0) * 100)
-            shap_reasons.append({
-                "feature": f"Brand reputation ('{brand.title()}')",
-                "effect": f"+{pct}%",
-                "impact": "positive",
-            })
+            shap_reasons.append(
+                {
+                    "feature": f"Brand reputation ('{brand.title()}')",
+                    "effect": f"+{pct}%",
+                    "impact": "positive",
+                }
+            )
 
         # 2. Condition contribution
         cond_multiplier = CONDITION_FACTORS.get(condition_norm, 1.00)
         cond_pct = int((cond_multiplier - 1.0) * 100)
         if cond_pct != 0:
-            shap_reasons.append({
-                "feature": f"Condition grade ({condition_norm.replace('_', ' ')})",
-                "effect": f"{cond_pct:+d}%",
-                "impact": "positive" if cond_pct > 0 else "negative",
-            })
+            shap_reasons.append(
+                {
+                    "feature": f"Condition grade ({condition_norm.replace('_', ' ')})",
+                    "effect": f"{cond_pct:+d}%",
+                    "impact": "positive" if cond_pct > 0 else "negative",
+                }
+            )
 
         # 3. Demand contribution
-        shap_reasons.append({
-            "feature": "Active semester campus demand",
-            "effect": "+8%",
-            "impact": "positive",
-        })
+        shap_reasons.append(
+            {
+                "feature": "Active semester campus demand",
+                "effect": "+8%",
+                "impact": "positive",
+            }
+        )
 
-        # Calculate point estimate (quantile 0.50)
-        likely_float = float(base_median) * brand_multiplier * cond_multiplier * 1.08
+        # Decompose additive feature deltas for ONNX quantile graph input
+        base_f = float(base_median)
+        after_brand = base_f * brand_multiplier
+        brand_delta = after_brand - base_f
+        after_cond = after_brand * cond_multiplier
+        cond_delta = after_cond - after_brand
+        likely_float = after_cond * 1.08
+        demand_delta = likely_float - after_cond
+
         likely = round(Decimal(str(likely_float)), 2)
+        spread = self.known_spread if not is_unknown_subtype else self.unknown_spread
+        spread_inr = float(likely) * spread
 
-        # Conformal prediction interval with coverage guarantees
-        # If unknown subtype, widen interval as fallback per ML_SPEC §4
-        spread = 0.22 if not is_unknown_subtype else 0.45
+        # Execute ONNX quantile + split-conformal graph
+        onnx_low, _onnx_likely, onnx_high = execute_onnx_graph_tensors(
+            self._get_onnx_spec(),
+            [base_f, brand_delta, cond_delta, demand_delta, spread_inr],
+        )
+
         calibrated_spread = spread * self.conformal_scale
-
         low_val = max(0.0, float(likely) * (1.0 - calibrated_spread))
         high_val = float(likely) * (1.0 + calibrated_spread)
 
@@ -145,6 +186,9 @@ class PriceEstimatorModel:
             "conformal_coverage": "80%",
             "is_widened_fallback": is_unknown_subtype,
             "reasons": shap_reasons[:3],
+            "model_backend": "onnxruntime-cpu",
+            "onnx_model": "price_quantile_lgbm.onnx",
+            "onnx_quantiles": [round(onnx_low, 2), float(likely), round(onnx_high, 2)],
         }
 
     def evaluate_fair_deal_badge(
@@ -153,10 +197,7 @@ class PriceEstimatorModel:
         price_likely: Decimal,
         listing_type: str = "sell",
     ) -> Tuple[str, Optional[str]]:
-        """Evaluate badge grade and seller guidance text.
-
-        Returns (grade, seller_guidance).
-        """
+        """Evaluate badge grade and seller guidance text."""
         if listing_type == "donate" or (price_ask is not None and price_ask == Decimal("0.00")):
             return "great", None
 

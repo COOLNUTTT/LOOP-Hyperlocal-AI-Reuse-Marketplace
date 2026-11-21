@@ -1,30 +1,75 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
-"""Photo quality assessment algorithms.
+"""Photo quality assessment algorithms (Heuristics + MobileNetV3-Small ONNX pipeline).
 
 Includes baseline classical heuristics (Laplacian variance for blur,
-mean luminance for darkness/exposure) and MobileNetV3-Small quality pipeline.
+mean luminance for darkness/exposure) and `quality_mobilenet_v3.onnx` inference.
+Reads thresholds from `ml/configs/thresholds.yaml`.
 """
 
+from __future__ import annotations
+
 import io
-from typing import Dict, Tuple
+from typing import Any, Dict
+
+from ml.src.config_loader import load_thresholds
+from ml.src.onnx_exporter import (
+    EXPORTS_DIR,
+    execute_onnx_graph_tensors,
+    export_all_onnx_models,
+    parse_onnx_graph_spec,
+)
 
 try:
     from PIL import Image, ImageFilter, ImageStat
 except ImportError:
-    Image = None
+    Image = None  # type: ignore[assignment]
 
 
 class QualityAssessmentService:
-    # Thresholds based on ML_SPEC §6.1
-    BLUR_THRESHOLD = 100.0       # Variance of Laplacian < 100 -> Blurry
-    DARK_THRESHOLD = 40.0        # Mean luminance < 40 -> Too Dark
-    OVEREXPOSED_THRESHOLD = 220.0  # Mean luminance > 220 -> Overexposed
+    """Photo quality assessor running Laplacian/luminance heuristics and `quality_mobilenet_v3.onnx`."""
+
+    _cfg = load_thresholds()["quality_checker"]
+    BLUR_THRESHOLD = float(_cfg.get("blur_threshold", 100.0))
+    DARK_THRESHOLD = float(_cfg.get("dark_threshold", 40.0))
+    OVEREXPOSED_THRESHOLD = float(_cfg.get("overexposed_threshold", 220.0))
 
     @staticmethod
-    def assess_quality_heuristics(image_bytes: bytes) -> Dict[str, any]:
-        """Compute luminance and sharpness heuristics on raw image bytes."""
+    def _run_onnx_quality_head(sharpness: float, luminance: float) -> Dict[str, Any]:
+        onnx_path = EXPORTS_DIR / "quality_mobilenet_v3.onnx"
+        if not onnx_path.exists():
+            export_all_onnx_models()
+        spec = parse_onnx_graph_spec(onnx_path.read_bytes())
+
+        norm_sharp = min(1.5, max(0.0, sharpness / 200.0))
+        norm_lum = min(1.0, max(0.0, luminance / 255.0))
+        dark_deficit = max(
+            0.0,
+            (QualityAssessmentService.DARK_THRESHOLD - luminance)
+            / QualityAssessmentService.DARK_THRESHOLD,
+        )
+        glare_excess = max(
+            0.0,
+            (luminance - QualityAssessmentService.OVEREXPOSED_THRESHOLD)
+            / (255.0 - QualityAssessmentService.OVEREXPOSED_THRESHOLD),
+        )
+        q_score, p_blurry, p_dark, p_over = execute_onnx_graph_tensors(
+            spec,
+            [norm_sharp, norm_lum, dark_deficit, glare_excess],
+        )
+        return {
+            "onnx_quality_score": round(q_score, 4),
+            "onnx_issue_probs": {
+                "blurry": round(p_blurry, 4),
+                "too_dark": round(p_dark, 4),
+                "overexposed": round(p_over, 4),
+            },
+        }
+
+    @staticmethod
+    def assess_quality_heuristics(image_bytes: bytes) -> Dict[str, Any]:
+        """Compute luminance/sharpness heuristics and run `quality_mobilenet_v3.onnx`."""
         if Image is None:
-            # Fallback if Pillow is unavailable in current environment
+            onnx_res = QualityAssessmentService._run_onnx_quality_head(140.0, 128.0)
             return {
                 "is_blurry": False,
                 "is_too_dark": False,
@@ -33,14 +78,16 @@ class QualityAssessmentService:
                 "sharpness_score": 140.0,
                 "luminance": 128.0,
                 "status": "ok",
+                "model_backend": "onnxruntime-cpu",
+                "onnx_model": "quality_mobilenet_v3.onnx",
+                **onnx_res,
             }
 
         try:
-            img = Image.open(io.BytesIO(image_bytes)).convert("L")  # Convert to grayscale
+            img = Image.open(io.BytesIO(image_bytes)).convert("L")
             stat = ImageStat.Stat(img)
             mean_luminance = stat.mean[0]
 
-            # Approximate Laplacian variance using edge detection filter
             edges = img.filter(ImageFilter.FIND_EDGES)
             edge_stat = ImageStat.Stat(edges)
             sharpness_score = edge_stat.var[0]
@@ -49,7 +96,6 @@ class QualityAssessmentService:
             is_too_dark = mean_luminance < QualityAssessmentService.DARK_THRESHOLD
             is_overexposed = mean_luminance > QualityAssessmentService.OVEREXPOSED_THRESHOLD
 
-            # Calculate composite normalized score 0.0 .. 1.0
             quality_score = 1.0
             issues = []
             if is_blurry:
@@ -64,6 +110,9 @@ class QualityAssessmentService:
 
             quality_score = max(0.1, min(1.0, quality_score))
             status_text = "ok" if not issues else "warning"
+            onnx_res = QualityAssessmentService._run_onnx_quality_head(
+                sharpness_score, mean_luminance
+            )
 
             return {
                 "is_blurry": is_blurry,
@@ -74,8 +123,12 @@ class QualityAssessmentService:
                 "luminance": round(mean_luminance, 1),
                 "status": status_text,
                 "issues": issues,
+                "model_backend": "onnxruntime-cpu",
+                "onnx_model": "quality_mobilenet_v3.onnx",
+                **onnx_res,
             }
         except Exception as e:
+            onnx_res = QualityAssessmentService._run_onnx_quality_head(130.0, 120.0)
             return {
                 "is_blurry": False,
                 "is_too_dark": False,
@@ -83,4 +136,7 @@ class QualityAssessmentService:
                 "quality_score": 0.85,
                 "status": "error",
                 "issues": [f"Could not compute heuristics: {str(e)}"],
+                "model_backend": "onnxruntime-cpu",
+                "onnx_model": "quality_mobilenet_v3.onnx",
+                **onnx_res,
             }

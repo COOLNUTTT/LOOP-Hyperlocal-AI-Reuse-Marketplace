@@ -13,6 +13,7 @@ from ml.src.product_recognition import product_recognizer
 from ml.src.smart_autofill import smart_autofill
 from pydantic import BaseModel, Field
 
+from app.ml_runtime.onnx_runtime import onnx_engine
 from app.schemas.ai import (
     AIAnalyzePhotosRequest,
     AIAnalyzePhotosResponse,
@@ -25,6 +26,12 @@ from app.schemas.ai import (
 )
 
 router = APIRouter(prefix="/ai", tags=["ai"])
+
+
+@router.get("/onnx-status")
+async def get_onnx_runtime_status() -> dict[str, Any]:
+    """Return status, SHA-256 hashes, and `< 1e-3` parity state of all 5 ONNX models."""
+    return onnx_engine.get_runtime_health()
 
 
 class StandalonePriceEstimateRequest(BaseModel):

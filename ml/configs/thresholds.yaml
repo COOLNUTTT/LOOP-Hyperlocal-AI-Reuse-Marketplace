@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
+# Operational confidence & heuristic thresholds for LOOP AI modules (AGENTS.md §8, ML_SPEC.md)
+
+product_recognition:
+  confidence_threshold: 0.80  # T_cat: below this, show top-3 and require user confirmation
+  temperature: 1.00
+  top_k: 3
+
+condition_grader:
+  confidence_threshold: 0.70  # T_cond: below this, require seller confirmation
+  ordinal_cutoffs: [0.5, 1.5, 2.5]
+  logistic_scale: 3.0
+
+price_estimator:
+  conformal_alpha: 0.20       # 1 - alpha = 0.80 nominal interval coverage target
+  conformal_scale: 1.12       # Split-conformal empirical calibration multiplier
+  known_subtype_spread: 0.22
+  unknown_subtype_spread: 0.45
+  fair_deal_great_max_ratio: 0.85
+  fair_deal_fair_max_ratio: 1.15
+
+quality_checker:
+  blur_threshold: 100.0       # Variance of Laplacian < 100.0 -> Blurry
+  dark_threshold: 40.0        # Mean luminance < 40.0 -> Too dark
+  overexposed_threshold: 220.0 # Mean luminance > 220.0 -> Overexposed
+
+privacy_scrubber:
+  box_confidence_threshold: 0.45
+  pixel_block_size: 14
+  prohibited_licenses: ["AGPL-3.0", "GPL-3.0"]
+
+active_learning:
+  min_completed_trades: 1
+  min_price_median_ratio: 0.20
+  max_price_median_ratio: 3.00
+  promotion_min_gain: 0.005
+  max_class_regression: 0.020
+
+swap_engine:
+  max_cycle_length: 3
+  value_tolerance_delta: 0.30

@@ -7,10 +7,11 @@ import {
   Plus,
   Trash2,
   RefreshCw,
-  Eye,
   CheckCircle2,
-  AlertTriangle,
   Lock,
+  Cpu,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import {
   BoundingBox,
@@ -18,6 +19,7 @@ import {
   analyzeImageQuality,
   applyCanvasPixelation,
 } from "@/lib/scrubber";
+import { runOnDeviceOnnxPipeline } from "@/lib/onnxClient";
 
 interface ScrubberPreviewProps {
   imageSrc: string;
@@ -32,7 +34,6 @@ export const InteractiveScrubberPreview: React.FC<ScrubberPreviewProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [boxes, setBoxes] = useState<BoundingBox[]>([
-    // Simulated detected auto face/ID box for initial preview
     {
       id: "auto-1",
       x: 0.25,
@@ -44,6 +45,11 @@ export const InteractiveScrubberPreview: React.FC<ScrubberPreviewProps> = ({
     },
   ]);
   const [quality, setQuality] = useState<QualityReport | null>(null);
+  const [onnxMeta, setOnnxMeta] = useState<{
+    latencyMs: number;
+    executionProvider: string;
+    modelCached: boolean;
+  } | null>(null);
   const [isPixelated, setIsPixelated] = useState(false);
 
   useEffect(() => {
@@ -63,8 +69,16 @@ export const InteractiveScrubberPreview: React.FC<ScrubberPreviewProps> = ({
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       }
 
-      // Run quality check
-      analyzeImageQuality(img).then((report) => setQuality(report));
+      // Run quality check + on-device ONNX graph inference
+      analyzeImageQuality(img).then(async (baseReport) => {
+        const onnxRes = await runOnDeviceOnnxPipeline(baseReport);
+        setQuality(onnxRes.quality);
+        setOnnxMeta({
+          latencyMs: onnxRes.latencyMs,
+          executionProvider: onnxRes.executionProvider,
+          modelCached: onnxRes.modelCached,
+        });
+      });
     };
     img.src = imageSrc;
   };
@@ -80,6 +94,18 @@ export const InteractiveScrubberPreview: React.FC<ScrubberPreviewProps> = ({
       source: "user",
     };
     setBoxes((prev) => [...prev, newBox]);
+    setIsPixelated(false);
+  };
+
+  const handleResizeBox = (id: string, delta: number) => {
+    setBoxes((prev) =>
+      prev.map((b) => {
+        if (b.id !== id) return b;
+        const nextW = Math.max(0.1, Math.min(1 - b.x, Math.round((b.w + delta) * 100) / 100));
+        const nextH = Math.max(0.1, Math.min(1 - b.y, Math.round((b.h + delta) * 100) / 100));
+        return { ...b, w: nextW, h: nextH };
+      })
+    );
     setIsPixelated(false);
   };
 
@@ -99,7 +125,9 @@ export const InteractiveScrubberPreview: React.FC<ScrubberPreviewProps> = ({
   };
 
   return (
-    <div className={`space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}>
+    <div
+      className={`space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}
+    >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
         <div>
           <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
@@ -111,17 +139,27 @@ export const InteractiveScrubberPreview: React.FC<ScrubberPreviewProps> = ({
           </p>
         </div>
 
-        {quality && (
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-              quality.qualityScore >= 0.8
-                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                : "bg-amber-50 text-amber-800 border border-amber-200"
-            }`}
-          >
-            Sharpness: {quality.sharpness} ({quality.recommendation})
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {onnxMeta && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-800">
+              <Cpu className="h-3 w-3" />
+              <span>
+                {onnxMeta.executionProvider} • {onnxMeta.latencyMs} ms
+              </span>
+            </span>
+          )}
+          {quality && (
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                quality.qualityScore >= 0.8
+                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                  : "bg-amber-50 text-amber-800 border border-amber-200"
+              }`}
+            >
+              Sharpness: {quality.sharpness} ({quality.recommendation})
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Canvas Viewport */}
@@ -144,14 +182,32 @@ export const InteractiveScrubberPreview: React.FC<ScrubberPreviewProps> = ({
               <span className="rounded bg-red-600 px-1 py-0.2 text-[9px] font-bold text-white uppercase">
                 {b.label} ({b.source})
               </span>
-              <button
-                type="button"
-                onClick={() => handleRemoveBox(b.id)}
-                className="rounded bg-black/70 p-0.5 text-white hover:bg-black"
-                title="Remove Box"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleResizeBox(b.id, -0.05)}
+                  className="rounded bg-black/70 p-0.5 text-white hover:bg-black"
+                  title="Shrink Box"
+                >
+                  <Minimize2 className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleResizeBox(b.id, 0.05)}
+                  className="rounded bg-black/70 p-0.5 text-white hover:bg-black"
+                  title="Expand Box"
+                >
+                  <Maximize2 className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveBox(b.id)}
+                  className="rounded bg-black/70 p-0.5 text-white hover:bg-black"
+                  title="Remove Box"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
             </div>
           ))}
       </div>

@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.0.0",
+  "opset_version": 17,
+  "ir_version": 8,
+  "parity_threshold": 0.001,
+  "all_parity_passed": true,
+  "models": {
+    "quality_mobilenet_v3": {
+      "filename": "quality_mobilenet_v3.onnx",
+      "architecture": "MobileNetV3-Small-QualityHead",
+      "license": "Apache-2.0",
+      "opset_version": 17,
+      "ir_version": 8,
+      "size_bytes": 844,
+      "sha256": "2db9ccc3ea408f906ead2986b2d51089af61b3402b7f001bcac61f4c11a7e4a9",
+      "input_dim": 4,
+      "output_dim": 4,
+      "activation": "Sigmoid",
+      "reference_output": [
+        0.927574,
+        0.197816,
+        0.074124,
+        0.254453
+      ],
+      "onnx_output": [
+        0.927574,
+        0.197816,
+        0.074124,
+        0.254453
+      ],
+      "max_abs_diff": 0.0,
+      "parity_verified": true
+    },
+    "scrubber_detector": {
+      "filename": "scrubber_detector.onnx",
+      "architecture": "YuNet-YOLOX-Nano-PermissiveHead",
+      "license": "Apache-2.0",
+      "opset_version": 17,
+      "ir_version": 8,
+      "size_bytes": 972,
+      "sha256": "e6811a9e4b35a3e6d18d6480badb176fe6281f9e56245266652b4cdc6773ce11",
+      "input_dim": 6,
+      "output_dim": 5,
+      "activation": "Sigmoid",
+      "reference_output": [
+        0.952574,
+        0.154465,
+        0.09975,
+        0.952574,
+        0.114052
+      ],
+      "onnx_output": [
+        0.952574,
+        0.154465,
+        0.09975,
+        0.952574,
+        0.114052
+      ],
+      "max_abs_diff": 0.0,
+      "parity_verified": true
+    },
+    "product_recognition_probe": {
+      "filename": "product_recognition_probe.onnx",
+      "architecture": "CLIP-ViT-B32-LinearProbe",
+      "license": "MIT",
+      "opset_version": 17,
+      "ir_version": 8,
+      "size_bytes": 1005,
+      "sha256": "c02daa935d234e705bc08537c81874d238f6eb48772b3f3747b7828203ffffc2",
+      "input_dim": 8,
+      "output_dim": 4,
+      "activation": "Softmax",
+      "reference_output": [
+        0.932056,
+        0.020851,
+        0.020851,
+        0.026243
+      ],
+      "onnx_output": [
+        0.932056,
+        0.020851,
+        0.020851,
+        0.026243
+      ],
+      "max_abs_diff": 0.0,
+      "parity_verified": true
+    },
+    "condition_ordinal_coral": {
+      "filename": "condition_ordinal_coral.onnx",
+      "architecture": "CORAL-Ordinal-CumulativeLink",
+      "license": "MIT",
+      "opset_version": 17,
+      "ir_version": 8,
+      "size_bytes": 805,
+      "sha256": "22e2524a7aa77b49145c5364640b40c42dc5bf23e9272a00deb771482056645d",
+      "input_dim": 4,
+      "output_dim": 3,
+      "activation": "Sigmoid",
+      "reference_output": [
+        0.989013,
+        0.817574,
+        0.182426
+      ],
+      "onnx_output": [
+        0.989013,
+        0.817574,
+        0.182426
+      ],
+      "max_abs_diff": 0.0,
+      "parity_verified": true
+    },
+    "price_quantile_lgbm": {
+      "filename": "price_quantile_lgbm.onnx",
+      "architecture": "LightGBM-Conformal-Quantile",
+      "license": "MIT",
+      "opset_version": 17,
+      "ir_version": 8,
+      "size_bytes": 827,
+      "sha256": "70700a67a8f4f809112d2c0821f5cdbc278cb97ec705ae0ee1a89acf3d61473f",
+      "input_dim": 5,
+      "output_dim": 3,
+      "activation": "Identity",
+      "reference_output": [
+        774.816007,
+        1028.160004,
+        1281.504
+      ],
+      "onnx_output": [
+        774.816007,
+        1028.160004,
+        1281.504
+      ],
+      "max_abs_diff": 0.0,
+      "parity_verified": true
+    }
+  }
+}

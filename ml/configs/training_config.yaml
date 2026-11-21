@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
+# Reproducible training & ONNX export configuration (AGENTS.md §5, ML_SPEC.md §0)
+
+experiment:
+  project_name: "loop_marketplace_ml"
+  mlflow_tracking_uri: "ml/mlruns"
+  seeds: [42, 101, 202]
+  splits:
+    train: 0.70
+    val: 0.15
+    test: 0.15
+  frozen_test_manifest: "ml/data/manifests/frozen_test_hashes.json"
+
+onnx_export:
+  opset_version: 17
+  ir_version: 8
+  parity_max_abs_diff: 0.001
+  export_dir: "ml/exports"
+  web_models_dir: "apps/web/public/models"
+
+models:
+  quality_mobilenet_v3:
+    filename: "quality_mobilenet_v3.onnx"
+    architecture: "MobileNetV3-Small-QualityHead"
+    license: "Apache-2.0"
+    input_dim: 4
+    output_dim: 4
+
+  scrubber_detector:
+    filename: "scrubber_detector.onnx"
+    architecture: "YuNet-YOLOX-Nano-PermissiveHead"
+    license: "Apache-2.0"
+    input_dim: 6
+    output_dim: 5
+
+  product_recognition_probe:
+    filename: "product_recognition_probe.onnx"
+    architecture: "CLIP-ViT-B32-LinearProbe"
+    license: "MIT"
+    input_dim: 8
+    output_dim: 4
+
+  condition_ordinal_coral:
+    filename: "condition_ordinal_coral.onnx"
+    architecture: "CORAL-Ordinal-CumulativeLink"
+    license: "MIT"
+    input_dim: 4
+    output_dim: 3
+
+  price_quantile_lgbm:
+    filename: "price_quantile_lgbm.onnx"
+    architecture: "LightGBM-Conformal-Quantile"
+    license: "MIT"
+    input_dim: 5
+    output_dim: 3

@@ -9,7 +9,8 @@
 """
 
 import unittest
-from ml.src.condition_grader import ConditionGraderModel, GRADE_TO_INT, ORDINAL_GRADES
+
+from ml.src.condition_grader import GRADE_TO_INT, ORDINAL_GRADES, ConditionGraderModel
 
 
 class TestPhase9ConditionGraderAcceptance(unittest.TestCase):
@@ -28,7 +29,9 @@ class TestPhase9ConditionGraderAcceptance(unittest.TestCase):
         self.assertGreaterEqual(res_pristine["expected_value"], 2.0)
 
         # Heavily scratched context -> Fair or Poor
-        res_damaged = self.grader.predict_condition(context_hints="heavy scratch broken dent worn torn")
+        res_damaged = self.grader.predict_condition(
+            context_hints="heavy scratch broken dent worn torn"
+        )
         self.assertIn(res_damaged["grade"], ["poor", "fair"])
         self.assertLess(res_damaged["expected_value"], 1.8)
 

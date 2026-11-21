@@ -44,7 +44,9 @@ class ReportUserRequest(BaseModel):
     listing_id: Optional[uuid.UUID] = None
     message_id: Optional[uuid.UUID] = None
     reason: str = Field(..., min_length=5, max_length=1000)
-    flag_type: str = Field(default="manual_report", pattern="^(manual_report|scam_text|price_anomaly)$")
+    flag_type: str = Field(
+        default="manual_report", pattern="^(manual_report|scam_text|price_anomaly)$"
+    )
 
 
 class ReportResponse(BaseModel):

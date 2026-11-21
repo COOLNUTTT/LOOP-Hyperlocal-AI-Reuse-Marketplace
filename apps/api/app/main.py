@@ -5,7 +5,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import ai, auth, chat, handover, health, listings, moderation, saved_searches, scrub_verify, users
+from app.routers import (
+    ai,
+    auth,
+    chat,
+    handover,
+    health,
+    listings,
+    moderation,
+    saved_searches,
+    scrub_verify,
+    users,
+)
 
 
 def create_app() -> FastAPI:

@@ -18,6 +18,7 @@ from ml.src.condition_grader import condition_grader
 from ml.src.price_estimator import price_estimator
 from ml.src.product_recognition import product_recognizer
 from ml.src.smart_autofill import smart_autofill
+
 from app.services.correction_service import CorrectionService
 
 
@@ -100,7 +101,9 @@ class TestSnapToListAcceptance(unittest.TestCase):
             field="category",
             user_value="hobbies",
         )
-        self.assertFalse(elig_unverified, "Unverified user correction must NOT be eligible for training")
+        self.assertFalse(
+            elig_unverified, "Unverified user correction must NOT be eligible for training"
+        )
 
         # Case 3: Anti-poisoning - price correction extreme outlier (> 3x median)
         # Median calculator is 850, 3x is 2550. User suggests 8500.
@@ -111,7 +114,9 @@ class TestSnapToListAcceptance(unittest.TestCase):
             category="electronics",
             subtype="Scientific Calculator",
         )
-        self.assertFalse(elig_poisoned_price, "Extreme outlier price (>3x median) must be flagged ineligible")
+        self.assertFalse(
+            elig_poisoned_price, "Extreme outlier price (>3x median) must be flagged ineligible"
+        )
 
         # Case 4: Reasonable price correction within bounds (e.g. 950 vs 850)
         elig_valid_price = CorrectionService.is_eligible_for_training(
@@ -132,7 +137,7 @@ class TestSnapToListAcceptance(unittest.TestCase):
             t0 = time.perf_counter()
             rec = product_recognizer.predict_from_features(text_context=context)
             cond = condition_grader.predict_condition(context_hints=context)
-            price = price_estimator.estimate_price(
+            _ = price_estimator.estimate_price(
                 category=rec["category"]["value"],
                 subtype=rec["subtype"],
                 brand="IKEA",
@@ -144,7 +149,7 @@ class TestSnapToListAcceptance(unittest.TestCase):
                 brand="IKEA",
                 condition=cond["grade"],
             )
-            draft = smart_autofill.generate_draft_copy(
+            _ = smart_autofill.generate_draft_copy(
                 category=rec["category"]["value"],
                 subtype=rec["subtype"],
                 brand="IKEA",
@@ -159,8 +164,14 @@ class TestSnapToListAcceptance(unittest.TestCase):
         p95_index = int(0.95 * len(latencies))
         p95_latency = latencies[p95_index]
 
-        print(f"\n[Phase 11 Benchmark] AI Pipeline Latency: Mean={sum(latencies)/len(latencies):.2f}ms, P95={p95_latency:.2f}ms")
-        self.assertLess(p95_latency, 100.0, f"p95 latency ({p95_latency:.2f}ms) must be under 100ms")
+        mean_ms = sum(latencies) / len(latencies)
+        print(
+            f"\n[Phase 11 Benchmark] AI Pipeline Latency: Mean={mean_ms:.2f}ms, "
+            f"P95={p95_latency:.2f}ms"
+        )
+        self.assertLess(
+            p95_latency, 100.0, f"p95 latency ({p95_latency:.2f}ms) must be under 100ms"
+        )
 
 
 if __name__ == "__main__":

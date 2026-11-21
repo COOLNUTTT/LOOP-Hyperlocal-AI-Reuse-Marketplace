@@ -3,7 +3,7 @@
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -69,17 +69,19 @@ class ReviewResponse(BaseModel):
 
 
 @router.get("/meetup-spots", response_model=list[str])
-async def get_meetup_spots(area_name: str = ""):
+async def get_meetup_spots(area_name: str = "") -> list[str]:
     """Return curated public campus/society meetup spots."""
     return HandoverService.get_meetup_suggestions(area_name)
 
 
-@router.post("/initiate", response_model=InitiateHandoverResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/initiate", response_model=InitiateHandoverResponse, status_code=status.HTTP_201_CREATED
+)
 async def initiate_handover(
     payload: InitiateHandoverRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> InitiateHandoverResponse:
     """Initiate a handover event with a 6-digit OTP."""
     stmt = select(Listing).where(Listing.id == payload.listing_id)
     res = await db.execute(stmt)
@@ -116,13 +118,15 @@ async def confirm_handover(
     payload: ConfirmHandoverRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> HandoverEvent:
     """Confirm handover with OTP. Transitions listing to completed once both confirm."""
     stmt = select(HandoverEvent).where(HandoverEvent.id == handover_id)
     res = await db.execute(stmt)
     handover = res.scalar_one_or_none()
     if not handover:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Handover event not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Handover event not found."
+        )
 
     try:
         HandoverService.verify_and_confirm(handover, current_user.id, payload.otp_code)
@@ -143,19 +147,22 @@ async def confirm_handover(
     return handover
 
 
-@router.post("/{handover_id}/reviews", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{handover_id}/reviews", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_review(
     handover_id: uuid.UUID,
     payload: CreateReviewRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> Review:
     """Submit a review gated on a completed handover."""
     stmt = select(HandoverEvent).where(HandoverEvent.id == handover_id)
     res = await db.execute(stmt)
     handover = res.scalar_one_or_none()
 
     TrustService.validate_review_allowed(handover, current_user.id)
+    assert handover is not None
 
     reviewee_id = handover.seller_id if current_user.id == handover.buyer_id else handover.buyer_id
     review = Review(
@@ -175,7 +182,7 @@ async def create_review(
 async def get_trust_score(
     user_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> dict[str, Any]:
     """Return user's trust score and visible additive breakdown."""
     u_stmt = select(User).where(User.id == user_id)
     u_res = await db.execute(u_stmt)

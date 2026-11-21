@@ -4,8 +4,8 @@ version: "3.8"
 services:
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: loop-api
     ports:
       - "8000:8000"

@@ -2,17 +2,13 @@
 """Service layer for chat messages, threads, and block/report actions."""
 
 import uuid
-from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models.chat import Flag, FlagStatus, FlagType, Message
-from app.models.identity import User
-from app.models.listing import Listing
 from app.services.chat_rate_limiter import chat_rate_limiter
 
 

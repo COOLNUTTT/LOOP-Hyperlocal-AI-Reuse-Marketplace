@@ -27,9 +27,10 @@ class ModerationService:
         """
         action_norm = action.strip().lower()
         if action_norm not in ALLOWED_MOD_ACTIONS:
+            allowed = sorted(ALLOWED_MOD_ACTIONS)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid moderation action: {action}. Must be one of {sorted(ALLOWED_MOD_ACTIONS)}.",
+                detail=f"Invalid moderation action: {action}. Must be one of {allowed}.",
             )
 
         now = datetime.now(timezone.utc)

@@ -36,10 +36,13 @@ class MockMessageStore:
         return [
             m
             for m in self.messages
-            if m["listing_id"] == listing_id and (m["sender_id"] == user_id or m["receiver_id"] == user_id)
+            if m["listing_id"] == listing_id
+            and (m["sender_id"] == user_id or m["receiver_id"] == user_id)
         ]
 
-    def create_flag(self, reporter_id: str, listing_id: str, reason: str, flag_type: str = "manual_report"):
+    def create_flag(
+        self, reporter_id: str, listing_id: str, reason: str, flag_type: str = "manual_report"
+    ):
         flag = {
             "id": str(uuid.uuid4()),
             "reporter_id": reporter_id,
@@ -72,8 +75,12 @@ class TestPhase6ChatAcceptance(unittest.TestCase):
         user_b = "user-bob"
         listing_id = "listing-calc-1"
 
-        msg1 = store.send_message(user_a, user_b, listing_id, "Is this Casio calculator still available?")
-        msg2 = store.send_message(user_b, user_a, listing_id, "Yes, available! We can meet at the library.")
+        msg1 = store.send_message(
+            user_a, user_b, listing_id, "Is this Casio calculator still available?"
+        )
+        msg2 = store.send_message(
+            user_b, user_a, listing_id, "Yes, available! We can meet at the library."
+        )
 
         # Both users can see thread history
         thread_a = store.get_thread(user_a, listing_id)
@@ -95,7 +102,9 @@ class TestPhase6ChatAcceptance(unittest.TestCase):
 
         # Intruder tries to read thread
         intruder_view = store.get_thread(user_intruder, listing_id)
-        self.assertEqual(len(intruder_view), 0, "Intruder must not access messages of other participants")
+        self.assertEqual(
+            len(intruder_view), 0, "Intruder must not access messages of other participants"
+        )
 
     def test_reporting_creates_manual_report_flag(self):
         store = MockMessageStore()

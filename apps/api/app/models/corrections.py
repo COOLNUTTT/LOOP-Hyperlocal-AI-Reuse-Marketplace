@@ -26,7 +26,10 @@ class Correction(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     listing_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("listings.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("listings.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
@@ -36,7 +39,9 @@ class Correction(Base):
     user_value: Mapped[str] = mapped_column(Text, nullable=False)
     ai_confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     model_version: Mapped[str] = mapped_column(String(50), default="v1.0.0", nullable=False)
-    eligible_for_training: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    eligible_for_training: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
     data_origin: Mapped[str] = mapped_column(String(20), default="real", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True

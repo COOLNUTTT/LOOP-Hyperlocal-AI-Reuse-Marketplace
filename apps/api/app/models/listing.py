@@ -57,7 +57,10 @@ class Listing(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     community_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("communities.id", ondelete="SET NULL"), nullable=True, index=True
+        UUID(as_uuid=True),
+        ForeignKey("communities.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
 
     type: Mapped[str] = mapped_column(String(20), default=ListingType.SELL.value, nullable=False)
@@ -100,7 +103,10 @@ class Listing(Base):
 
     # Relationships
     images: Mapped[list["ListingImage"]] = relationship(
-        "ListingImage", back_populates="listing", cascade="all, delete-orphan", order_by="ListingImage.order"
+        "ListingImage",
+        back_populates="listing",
+        cascade="all, delete-orphan",
+        order_by="ListingImage.order",
     )
 
 
@@ -109,7 +115,10 @@ class ListingImage(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     listing_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("listings.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("listings.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     storage_path: Mapped[str] = mapped_column(String(500), nullable=False)
     order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

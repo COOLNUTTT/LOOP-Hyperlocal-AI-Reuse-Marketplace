@@ -6,7 +6,7 @@ Enforces roadmap constraint: max 60 messages per minute per user.
 
 import time
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 class ChatRateLimiter:
@@ -33,7 +33,7 @@ class ChatRateLimiter:
         self._history[user_id].append(now)
         return True
 
-    def reset(self, user_id: str = None):
+    def reset(self, user_id: Optional[str] = None) -> None:
         """Reset limits for testing."""
         if user_id:
             self._history.pop(user_id, None)

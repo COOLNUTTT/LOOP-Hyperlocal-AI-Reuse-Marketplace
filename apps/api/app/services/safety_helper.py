@@ -58,17 +58,25 @@ class SafetyAndNegotiationHelper:
 
         if price_ask and price_ask <= low:
             return {
-                "suggestion": f"Asking price (₹{price_ask}) is already a Great Deal below market range.",
+                "suggestion": (
+                    f"Asking price (₹{price_ask}) is already a Great Deal below market range."
+                ),
                 "suggested_offer": float(price_ask),
             }
         elif price_ask and price_ask > high:
             return {
-                "suggestion": f"Asking price is above market range. Consider offering around ₹{price_likely}.",
+                "suggestion": (
+                    f"Asking price is above market range. "
+                    f"Consider offering around ₹{price_likely}."
+                ),
                 "suggested_offer": float(price_likely),
             }
         else:
             midpoint = round((float(low) + float(price_likely)) / 2.0, 2)
             return {
-                "suggestion": f"Fair market range is ₹{low}–₹{high}. A polite opening offer is ₹{midpoint}.",
+                "suggestion": (
+                    f"Fair market range is ₹{low}–₹{high}. "
+                    f"A polite opening offer is ₹{midpoint}."
+                ),
                 "suggested_offer": midpoint,
             }

@@ -10,8 +10,8 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.listing import FairDealGrade, Listing, ListingImage, ListingStatus
 from app.models.identity import User
+from app.models.listing import FairDealGrade, Listing, ListingImage, ListingStatus
 from app.services.correction_service import CorrectionService
 
 
@@ -52,7 +52,8 @@ class ListingService:
         if not payload_data.get("fair_deal"):
             payload_data["fair_deal"] = ListingService.calculate_fair_deal_badge(
                 price_ask=payload_data.get("price_ask"),
-                price_likely=payload_data.get("price_likely") or payload_data.get("price_ai_likely"),
+                price_likely=payload_data.get("price_likely")
+                or payload_data.get("price_ai_likely"),
                 listing_type=payload_data.get("type", "sell"),
             )
 
@@ -88,11 +89,7 @@ class ListingService:
         listing_id: uuid.UUID,
     ) -> Listing:
         """Retrieve listing with images eagerly loaded."""
-        stmt = (
-            select(Listing)
-            .where(Listing.id == listing_id)
-            .options(selectinload(Listing.images))
-        )
+        stmt = select(Listing).where(Listing.id == listing_id).options(selectinload(Listing.images))
         result = await db.execute(stmt)
         listing = result.scalar_one_or_none()
         if not listing:
@@ -177,7 +174,7 @@ class ListingService:
         update_data: dict[str, Any],
         user: Optional[User] = None,
     ) -> Listing:
-        """Update draft or active listing owned by seller and log corrections if AI fields changed."""
+        """Update draft or active listing owned by seller and log AI corrections."""
         listing = await ListingService.get_listing(db, listing_id)
         if listing.seller_id != seller_id:
             raise HTTPException(
@@ -252,7 +249,10 @@ class ListingService:
         if unscrubbed_images:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="LISTING_NOT_SCRUBBED: All images must be verified and scrubbed of private faces, plates, and phone numbers before publishing.",
+                detail=(
+                    "LISTING_NOT_SCRUBBED: All images must be verified and scrubbed "
+                    "of private faces, plates, and phone numbers before publishing."
+                ),
             )
 
         listing.status = ListingStatus.ACTIVE.value
@@ -268,7 +268,7 @@ class ListingService:
         storage_path: str,
         scrubbed: bool = False,
         quality_score: Optional[float] = None,
-        scrub_boxes: list[dict[str, Any]] = None,
+        scrub_boxes: Optional[list[dict[str, Any]]] = None,
     ) -> ListingImage:
         """Attach an image to a listing."""
         listing = await ListingService.get_listing(db, listing_id)

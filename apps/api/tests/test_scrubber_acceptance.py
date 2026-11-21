@@ -8,6 +8,7 @@
 """
 
 import unittest
+
 from ml.src.privacy_scrubber import PrivacyScrubberDetector
 from ml.src.quality_checker import QualityAssessmentService
 
@@ -41,8 +42,10 @@ class TestPhase7QualityAndScrubberAcceptance(unittest.TestCase):
     def test_server_safeguard_blocks_unscrubbed_face(self):
         # Deliberately unblurred test image containing unscrubbed face signature
         unscrubbed_image_bytes = b"HEADER_DATA_UNSCRUBBED_TEST_FACE_RAW_IMAGE"
-        is_safe, detected_leaks = PrivacyScrubberDetector.inspect_image_for_unscrubbed_sensitive_data(
-            unscrubbed_image_bytes
+        is_safe, detected_leaks = (
+            PrivacyScrubberDetector.inspect_image_for_unscrubbed_sensitive_data(
+                unscrubbed_image_bytes
+            )
         )
 
         self.assertFalse(is_safe, "Unscrubbed face must be flagged as NOT safe by safeguard scan")
@@ -52,8 +55,8 @@ class TestPhase7QualityAndScrubberAcceptance(unittest.TestCase):
     def test_server_safeguard_passes_clean_scrubbed_image(self):
         # Fully scrubbed / safe item image
         clean_image_bytes = b"COMPLETELY_SCRUBBED_IMAGE_PAYLOAD_SAFE"
-        is_safe, detected_leaks = PrivacyScrubberDetector.inspect_image_for_unscrubbed_sensitive_data(
-            clean_image_bytes
+        is_safe, detected_leaks = (
+            PrivacyScrubberDetector.inspect_image_for_unscrubbed_sensitive_data(clean_image_bytes)
         )
 
         self.assertTrue(is_safe, "Properly scrubbed image must pass server safeguard scan")

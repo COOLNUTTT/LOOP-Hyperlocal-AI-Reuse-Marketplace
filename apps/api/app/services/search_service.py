@@ -3,9 +3,8 @@
 
 from __future__ import annotations
 
-import uuid
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from ml.src.semantic_search import (
     cosine_similarity,
@@ -35,7 +34,7 @@ class SearchService:
         query: str,
         top_k: int = 20,
     ) -> Tuple[List[Any], Dict[str, Any]]:
-        """Parse natural query, apply extracted price/place filters, and rank by 384-d cosine similarity."""
+        """Parse query, apply extracted price/place filters, and rank by 384-d cosine similarity."""
         parsed = parse_natural_query(query)
         clean_q = parsed["clean_query"]
         price_max = parsed["price_max"]

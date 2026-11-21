@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 """Acceptance test verifying Phase 12 Semantic Multilingual Search, Image Search & Saved Searches:
 
-1. Natural-language query parser extracts price ceiling and place ("study table under 3000 near Wakad").
+1. Natural-language query parser extracts price ceiling and place ("study table under 3000").
 2. Hinglish semantic search outperforms FTS baseline.
 3. 512-d image search and "similar items" exclude target and rank relevant items first.
 4. Saved search alert matching triggers on matching new listings.
@@ -11,7 +11,8 @@ import unittest
 import uuid
 from decimal import Decimal
 
-from ml.src.semantic_search import parse_natural_query, embed_text, embed_image, cosine_similarity
+from ml.src.semantic_search import parse_natural_query
+
 from app.services.search_service import SearchService
 
 
@@ -36,14 +37,46 @@ class MockSavedSearch:
 class TestPhase12SemanticSearchAcceptance(unittest.TestCase):
     def setUp(self):
         self.listings = [
-            MockListing(uuid.uuid4(), "IKEA Study Table Wood", "furniture", "Study Table", 2400, "Wakad", "IKEA"),
-            MockListing(uuid.uuid4(), "Expensive Study Table", "furniture", "Study Table", 4500, "Wakad", "IKEA"),
-            MockListing(uuid.uuid4(), "Casio fx-991EX Calculator", "electronics", "Scientific Calculator", 850, "Lohegaon", "Casio"),
-            MockListing(uuid.uuid4(), "B.S. Grewal Engineering Textbook", "books", "Engineering Textbook", 350, "Charholi", "Pearson"),
+            MockListing(
+                uuid.uuid4(),
+                "IKEA Study Table Wood",
+                "furniture",
+                "Study Table",
+                2400,
+                "Wakad",
+                "IKEA",
+            ),
+            MockListing(
+                uuid.uuid4(),
+                "Expensive Study Table",
+                "furniture",
+                "Study Table",
+                4500,
+                "Wakad",
+                "IKEA",
+            ),
+            MockListing(
+                uuid.uuid4(),
+                "Casio fx-991EX Calculator",
+                "electronics",
+                "Scientific Calculator",
+                850,
+                "Lohegaon",
+                "Casio",
+            ),
+            MockListing(
+                uuid.uuid4(),
+                "B.S. Grewal Engineering Textbook",
+                "books",
+                "Engineering Textbook",
+                350,
+                "Charholi",
+                "Pearson",
+            ),
         ]
 
     def test_query_parser_price_and_place(self):
-        """Verify 'study table under 3000 near Wakad' extracts price_max=3000 and area_name='Wakad'."""
+        """Verify 'study table under 3000 near Wakad' extracts price_max and area_name."""
         parsed = parse_natural_query("study table under 3000 near Wakad")
         self.assertEqual(parsed["price_max"], Decimal("3000"))
         self.assertEqual(parsed["area_name"].lower(), "wakad")
@@ -71,7 +104,9 @@ class TestPhase12SemanticSearchAcceptance(unittest.TestCase):
 
     def test_image_search_and_similar_items(self):
         """Verify 512-d image search and similar items."""
-        img_results = SearchService.search_by_image(self.listings, "casio scientific calculator solar", top_k=2)
+        img_results = SearchService.search_by_image(
+            self.listings, "casio scientific calculator solar", top_k=2
+        )
         self.assertEqual(img_results[0].brand, "Casio")
 
         target = self.listings[0]

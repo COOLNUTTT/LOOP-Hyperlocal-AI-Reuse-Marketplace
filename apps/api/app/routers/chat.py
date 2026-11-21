@@ -2,9 +2,9 @@
 """FastAPI router for chat threads, messaging, and moderation reports."""
 
 import uuid
-from typing import Annotated, List, Optional
+from typing import Annotated, Any, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.auth import get_current_user
@@ -15,7 +15,6 @@ from app.schemas.chat import (
     MessageResponse,
     ReportResponse,
     ReportUserRequest,
-    ThreadSummaryResponse,
 )
 from app.services.chat_service import chat_service
 
@@ -27,7 +26,7 @@ async def send_message(
     payload: MessageCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> Any:
     """Send a message to a seller or buyer. Rate-limited to 60/min."""
     return await chat_service.send_message(
         db=db,
@@ -42,11 +41,11 @@ async def send_message(
 async def get_thread_messages(
     listing_id: uuid.UUID,
     other_user_id: Optional[uuid.UUID] = Query(None),
-    current_user: Annotated[User, Depends(get_current_user)] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
-):
+    current_user: Annotated[Optional[User], Depends(get_current_user)] = None,
+    db: Annotated[Optional[AsyncSession], Depends(get_db)] = None,
+) -> List[Any]:
     """Get message history for a listing thread."""
-    if db is None:
+    if db is None or current_user is None:
         return []
     return await chat_service.get_thread_messages(
         db=db,
@@ -61,7 +60,7 @@ async def report_user(
     payload: ReportUserRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> ReportResponse:
     """Report a suspicious user, message, or listing for scam or abuse."""
     flag = await chat_service.create_report(
         db=db,

@@ -2,7 +2,7 @@
 """FastAPI router for moderator flag queue, audit logging, and model health."""
 
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -38,7 +38,7 @@ async def list_flag_queue(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
     flag_status: str = "open",
-):
+) -> list[Any]:
     """Return moderation flag queue with human-readable reasons."""
     _require_moderator(current_user)
     stmt = select(Flag).where(Flag.status == flag_status).order_by(Flag.created_at.desc())
@@ -52,7 +52,7 @@ async def moderate_flag(
     payload: ModerationActionRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> dict[str, str]:
     """Execute a moderator decision (uphold/dismiss/remove/warn) and write an audit_logs row."""
     _require_moderator(current_user)
 
@@ -63,8 +63,8 @@ async def moderate_flag(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flag not found.")
 
     listing: Optional[Listing] = None
-    if flag.target_type == "listing":
-        l_stmt = select(Listing).where(Listing.id == flag.target_id)
+    if flag.listing_id is not None:
+        l_stmt = select(Listing).where(Listing.id == flag.listing_id)
         l_res = await db.execute(l_stmt)
         listing = l_res.scalar_one_or_none()
 
@@ -85,10 +85,10 @@ async def moderate_flag(
 async def get_model_health(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> dict[str, Any]:
     """Return confidence histograms and drift indicators for active models."""
     _require_moderator(current_user)
     stmt = select(Listing.condition_conf).where(Listing.condition_conf.isnot(None)).limit(500)
     res = await db.execute(stmt)
-    confs = [float(c) for c in res.scalars().all()]
+    confs = [float(c) for c in res.scalars().all() if c is not None]
     return ModerationService.compute_model_health(confs)

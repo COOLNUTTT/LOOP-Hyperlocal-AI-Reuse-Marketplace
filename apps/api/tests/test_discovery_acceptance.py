@@ -11,6 +11,7 @@ import time
 import unittest
 from decimal import Decimal
 
+
 # Simulated listings generator
 def generate_mock_listings(n=1000):
     categories = ["electronics", "furniture", "books", "hobbies"]
@@ -49,7 +50,9 @@ def generate_mock_listings(n=1000):
     return items
 
 
-def filter_listings(items, category=None, listing_type=None, condition=None, price_max=None, geohash5=None):
+def filter_listings(
+    items, category=None, listing_type=None, condition=None, price_max=None, geohash5=None
+):
     results = []
     for it in items:
         if it["status"] != "active":
@@ -109,7 +112,9 @@ class TestPhase5DiscoveryAcceptance(unittest.TestCase):
 
         # 2. Price ceiling + Geohash filter
         res = filter_listings(self.dataset, price_max=Decimal("500"), geohash5="tek3x")
-        self.assertTrue(all(r["price_ask"] <= Decimal("500") and r["geohash5"] == "tek3x" for r in res))
+        self.assertTrue(
+            all(r["price_ask"] <= Decimal("500") and r["geohash5"] == "tek3x" for r in res)
+        )
 
     def test_coarse_privacy_guarantee(self):
         # Verify no items leak exact addresses

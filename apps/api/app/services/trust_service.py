@@ -15,7 +15,9 @@ class TrustService:
         if not handover or getattr(handover, "status", None) != "completed":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="REVIEW_NOT_ALLOWED: Reviews can only be submitted after a completed handover.",
+                detail=(
+                    "REVIEW_NOT_ALLOWED: Reviews can only be submitted after a completed handover."
+                ),
             )
         if reviewer_id not in (handover.buyer_id, handover.seller_id):
             raise HTTPException(

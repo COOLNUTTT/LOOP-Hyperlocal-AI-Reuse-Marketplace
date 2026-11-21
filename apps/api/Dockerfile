@@ -10,12 +10,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY apps/api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app/ ./app/
-COPY alembic.ini .
-COPY alembic/ ./alembic/
+COPY apps/api/app/ ./app/
+COPY apps/api/alembic.ini .
+COPY apps/api/alembic/ ./alembic/
+COPY ml/ ./ml/
 
 EXPOSE 8000
 

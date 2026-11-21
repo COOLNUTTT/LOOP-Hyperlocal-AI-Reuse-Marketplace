@@ -2,11 +2,9 @@
 """Service for validating, stripping EXIF metadata, and saving listing images."""
 
 import io
-import os
-import uuid
 from typing import Tuple
 
-from fastapi import HTTPException, UploadFile, status
+from fastapi import HTTPException, status
 
 ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -19,13 +17,17 @@ class ImageProcessingService:
         if content_type not in ALLOWED_MIME_TYPES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported image format: {content_type}. Allowed formats: image/jpeg, image/png, image/webp.",
+                detail=(
+                    f"Unsupported image format: {content_type}. "
+                    "Allowed formats: image/jpeg, image/png, image/webp."
+                ),
             )
 
         if len(file_bytes) > MAX_IMAGE_SIZE_BYTES:
+            max_mb = MAX_IMAGE_SIZE_BYTES // (1024 * 1024)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Image size exceeds the maximum permitted limit of {MAX_IMAGE_SIZE_BYTES // (1024 * 1024)}MB.",
+                detail=f"Image size exceeds the maximum permitted limit of {max_mb}MB.",
             )
 
         try:
@@ -56,4 +58,4 @@ class ImageProcessingService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Corrupt or unreadable image: {str(e)}",
-            )
+            ) from e

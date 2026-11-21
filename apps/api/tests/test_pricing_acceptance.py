@@ -10,6 +10,7 @@
 
 import unittest
 from decimal import Decimal
+
 from ml.src.price_estimator import PriceEstimatorModel
 
 
@@ -84,7 +85,9 @@ class TestPhase10PriceEstimatorAcceptance(unittest.TestCase):
         self.assertIn("significantly higher", guidance)
 
         # Donation -> great
-        badge_donate, _ = self.estimator.evaluate_fair_deal_badge(Decimal("0.00"), likely, listing_type="donate")
+        badge_donate, _ = self.estimator.evaluate_fair_deal_badge(
+            Decimal("0.00"), likely, listing_type="donate"
+        )
         self.assertEqual(badge_donate, "great")
 
 

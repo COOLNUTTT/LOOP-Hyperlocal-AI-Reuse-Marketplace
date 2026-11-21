@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 "use client";
 
-import React, { useState } from "react";
+import React, { use, useState } from "react";
 import Link from "next/link";
 import {
   MapPin,
@@ -20,12 +20,17 @@ import {
 import FairDealBadge from "@/components/FairDealBadge";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
-export default function ListingDetailPage({ params }: { params: { id: string } }) {
+export default function ListingDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   const [isSaved, setIsSaved] = useState(false);
 
   // Demo representation
   const item = {
-    id: params.id,
+    id,
     title: "Casio fx-991EX ClassWiz Engineering Calculator",
     type: "sell",
     category: "electronics",

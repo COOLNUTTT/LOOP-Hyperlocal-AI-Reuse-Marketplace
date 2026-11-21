@@ -9,6 +9,7 @@
 """
 
 import unittest
+
 from ml.src.product_recognition import ProductRecognitionModel
 
 
@@ -18,23 +19,31 @@ class TestPhase8ProductRecognitionAcceptance(unittest.TestCase):
 
     def test_category_and_subtype_prediction(self):
         # Electronics test
-        res_elec = self.model.predict_from_features(text_context="Casio fx-991EX scientific calculator with solar panel")
+        res_elec = self.model.predict_from_features(
+            text_context="Casio fx-991EX scientific calculator with solar panel"
+        )
         self.assertEqual(res_elec["category"]["value"], "electronics")
         self.assertGreater(res_elec["category"]["conf"], 0.70)
         self.assertEqual(res_elec["brand_model"]["brand"], "Casio")
         self.assertIn(res_elec["subtype"], ["Scientific Calculator", "Calculator", "Item"])
 
         # Furniture test
-        res_furn = self.model.predict_from_features(text_context="IKEA study desk table with drawer")
+        res_furn = self.model.predict_from_features(
+            text_context="IKEA study desk table with drawer"
+        )
         self.assertEqual(res_furn["category"]["value"], "furniture")
         self.assertEqual(res_furn["brand_model"]["brand"], "IKEA")
 
         # Books test
-        res_book = self.model.predict_from_features(text_context="Higher Engineering Mathematics textbook by B.S. Grewal")
+        res_book = self.model.predict_from_features(
+            text_context="Higher Engineering Mathematics textbook by B.S. Grewal"
+        )
         self.assertEqual(res_book["category"]["value"], "books")
 
         # Hobbies test
-        res_hob = self.model.predict_from_features(text_context="Yamaha acoustic guitar with nylon strings")
+        res_hob = self.model.predict_from_features(
+            text_context="Yamaha acoustic guitar with nylon strings"
+        )
         self.assertEqual(res_hob["category"]["value"], "hobbies")
         self.assertEqual(res_hob["brand_model"]["brand"], "Yamaha")
 

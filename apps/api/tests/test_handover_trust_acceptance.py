@@ -18,6 +18,7 @@ from decimal import Decimal
 try:
     from fastapi import HTTPException
 except ImportError:
+
     class HTTPException(Exception):
         def __init__(self, status_code: int, detail: str = ""):
             self.status_code = status_code
@@ -33,9 +34,9 @@ except ImportError:
     )
     sys.modules["fastapi"] = fastapi_mod
 
-from app.services.handover_service import HandoverService, MAX_OTP_ATTEMPTS
-from app.services.trust_service import TrustService
+from app.services.handover_service import MAX_OTP_ATTEMPTS, HandoverService
 from app.services.safety_helper import SafetyAndNegotiationHelper
+from app.services.trust_service import TrustService
 
 
 class MockHandover:

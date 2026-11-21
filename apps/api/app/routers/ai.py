@@ -1,11 +1,15 @@
 # Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
-"""FastAPI router for AI features powered by real recognition, condition grading & conformal pricing."""
+"""FastAPI router for AI recognition, condition grading & conformal pricing."""
 
 import time
 from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter
+from ml.src.condition_grader import condition_grader
+from ml.src.price_estimator import price_estimator
+from ml.src.product_recognition import product_recognizer
+from ml.src.smart_autofill import smart_autofill
 from pydantic import BaseModel
 
 from app.schemas.ai import (
@@ -18,10 +22,6 @@ from app.schemas.ai import (
     AIPricePrediction,
     AIPriceReason,
 )
-from ml.src.condition_grader import condition_grader
-from ml.src.price_estimator import price_estimator
-from ml.src.product_recognition import product_recognizer
-from ml.src.smart_autofill import smart_autofill
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -45,7 +45,9 @@ class StandalonePriceEstimateResponse(BaseModel):
 
 
 @router.post("/price-estimate", response_model=StandalonePriceEstimateResponse)
-async def get_price_estimate(payload: StandalonePriceEstimateRequest):
+async def get_price_estimate(
+    payload: StandalonePriceEstimateRequest,
+) -> StandalonePriceEstimateResponse:
     """Estimate calibrated price bounds with SHAP reasons and fair-deal badge."""
     est = price_estimator.estimate_price(
         category=payload.category,
@@ -71,10 +73,12 @@ async def get_price_estimate(payload: StandalonePriceEstimateRequest):
 
 
 @router.post("/analyze-photos", response_model=AIAnalyzePhotosResponse)
-async def analyze_photos(payload: AIAnalyzePhotosRequest):
+async def analyze_photos(payload: AIAnalyzePhotosRequest) -> AIAnalyzePhotosResponse:
     """Product recognition, condition grading, split-conformal pricing & smart autofill."""
     start_time = time.perf_counter()
-    context_text = " ".join(payload.image_urls) if payload.image_urls else "electronics calculator casio"
+    context_text = (
+        " ".join(payload.image_urls) if payload.image_urls else "electronics calculator casio"
+    )
 
     # 1. Product recognition
     rec_result = product_recognizer.predict_from_features(text_context=context_text)

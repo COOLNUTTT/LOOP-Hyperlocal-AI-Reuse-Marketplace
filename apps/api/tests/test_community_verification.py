@@ -97,14 +97,19 @@ def test_wrong_domain_rejected_without_code() -> None:
 
 
 def test_valid_join_code_verified() -> None:
+    from unittest.mock import patch
+
+    from app.services.auth_service import auth_service
+
     settings = get_settings()
     test_code = settings.seed_join_code or "LOOP-DEMO-2026"
     token = _make_auth_token("user@gmail.com", confirmed=True)
-    response = client.post(
-        "/api/v1/auth/verify-community",
-        headers={"Authorization": f"Bearer {token}"},
-        json={"method": "join_code", "join_code": test_code},
-    )
+    with patch.object(auth_service.settings, "seed_join_code", test_code):
+        response = client.post(
+            "/api/v1/auth/verify-community",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"method": "join_code", "join_code": test_code},
+        )
     assert response.status_code == 200
     data = response.json()
     assert data["is_verified"] is True

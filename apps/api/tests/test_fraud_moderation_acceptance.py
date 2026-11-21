@@ -17,6 +17,7 @@ from decimal import Decimal
 try:
     from fastapi import HTTPException
 except ImportError:
+
     class HTTPException(Exception):
         def __init__(self, status_code: int, detail: str = ""):
             self.status_code = status_code
@@ -28,8 +29,9 @@ except ImportError:
     fastapi_mod.status = types.SimpleNamespace(HTTP_400_BAD_REQUEST=400)
     sys.modules["fastapi"] = fastapi_mod
 
-from ml.src.fraud_detector import FraudDetector
 from ml.src.eval_fraud import run_evaluation
+from ml.src.fraud_detector import FraudDetector
+
 from app.services.moderation_service import ModerationService
 
 
@@ -67,7 +69,9 @@ class TestPhase14FraudModerationAcceptance(unittest.TestCase):
 
     def test_scam_text_classifier_with_reason(self):
         """Verify scam-text classifier produces human-readable reason."""
-        res = FraudDetector.classify_scam_text("Pay advance payment and scan QR code to receive money")
+        res = FraudDetector.classify_scam_text(
+            "Pay advance payment and scan QR code to receive money"
+        )
         self.assertTrue(res["is_scam"])
         self.assertGreaterEqual(res["score"], 0.5)
         self.assertIn("Scam-text risk", res["reason"])

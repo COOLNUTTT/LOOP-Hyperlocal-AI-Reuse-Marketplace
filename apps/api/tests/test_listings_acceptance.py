@@ -7,7 +7,6 @@
 """
 
 import unittest
-from decimal import Decimal
 
 ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -39,7 +38,10 @@ def can_publish_listing(images: list):
 class TestPhase4ListingAcceptance(unittest.TestCase):
     def test_image_mime_and_size_validation(self):
         # Valid PNG byte stream
-        valid_bytes = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4"
+        valid_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4"
+        )
         self.assertTrue(validate_image_metadata(valid_bytes, "image/png"))
 
         # Invalid MIME type rejection

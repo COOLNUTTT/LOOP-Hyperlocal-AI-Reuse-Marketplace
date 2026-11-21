@@ -3,9 +3,10 @@
 
 import uuid
 from decimal import Decimal
-from typing import Annotated, Optional
+from typing import Annotated, Optional, cast
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from ml.src.semantic_search import parse_natural_query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.auth import get_current_user
@@ -22,15 +23,19 @@ from app.schemas.listing import (
 from app.services.image_service import ImageProcessingService
 from app.services.listing_service import ListingService
 from app.services.search_service import SearchService
-from ml.src.semantic_search import parse_natural_query
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
 
 @router.get("", response_model=ListingListResponse)
 async def list_listings(
-    q: Optional[str] = Query(None, description="Search keyword or natural query (e.g. 'study table under 3000 near Wakad')"),
-    mode: str = Query("semantic", pattern="^(semantic|fts)$", description="Search mode: semantic or fts baseline"),
+    q: Optional[str] = Query(
+        None,
+        description="Search keyword or natural query (e.g. 'study table under 3000 near Wakad')",
+    ),
+    mode: str = Query(
+        "semantic", pattern="^(semantic|fts)$", description="Search mode: semantic or fts baseline"
+    ),
     category: Optional[str] = Query(None, pattern="^(electronics|furniture|books|hobbies)$"),
     type: Optional[str] = Query(None, pattern="^(sell|donate|swap)$"),
     condition: Optional[str] = Query(None, pattern="^(like_new|good|fair|poor)$"),
@@ -40,10 +45,14 @@ async def list_listings(
     geohash5: Optional[str] = Query(None, max_length=5),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
-):
+    db: Annotated[Optional[AsyncSession], Depends(get_db)] = None,
+) -> ListingListResponse:
     """Browse and filter active listings with semantic multilingual search or FTS baseline."""
-    parsed = parse_natural_query(q) if (q and mode == "semantic") else {"clean_query": q, "price_max": None, "area_name": None}
+    parsed = (
+        parse_natural_query(q)
+        if (q and mode == "semantic")
+        else {"clean_query": q, "price_max": None, "area_name": None}
+    )
     effective_price_max = price_max if price_max is not None else parsed.get("price_max")
     effective_area = area_name if area_name is not None else parsed.get("area_name")
     effective_q = parsed.get("clean_query") if (q and mode == "semantic") else q
@@ -79,7 +88,7 @@ async def list_listings(
         total=total,
         limit=limit,
         offset=offset,
-        items=items,
+        items=cast(list[ListingDetailResponse], items),
         applied_filters={
             k: v
             for k, v in {
@@ -102,20 +111,20 @@ async def create_listing(
     payload: ListingCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> ListingDetailResponse:
     """Create a new listing draft."""
     data = payload.model_dump()
     listing = await ListingService.create_listing(db, current_user.id, data, user=current_user)
-    return listing
+    return cast(ListingDetailResponse, listing)
 
 
 @router.get("/{listing_id}", response_model=ListingDetailResponse)
 async def get_listing(
     listing_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> ListingDetailResponse:
     """Get listing details with images eagerly loaded."""
-    return await ListingService.get_listing(db, listing_id)
+    return cast(ListingDetailResponse, await ListingService.get_listing(db, listing_id))
 
 
 @router.patch("/{listing_id}", response_model=ListingDetailResponse)
@@ -124,10 +133,15 @@ async def update_listing(
     payload: ListingUpdateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> ListingDetailResponse:
     """Update listing details and record active learning corrections if AI predictions changed."""
     data = payload.model_dump(exclude_unset=True)
-    return await ListingService.update_listing(db, listing_id, current_user.id, data, user=current_user)
+    return cast(
+        ListingDetailResponse,
+        await ListingService.update_listing(
+            db, listing_id, current_user.id, data, user=current_user
+        ),
+    )
 
 
 @router.post("/{listing_id}/publish", response_model=PublishListingResponse)
@@ -135,7 +149,7 @@ async def publish_listing(
     listing_id: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> PublishListingResponse:
     """Publish a listing. Fails with 400 if any image is unscrubbed."""
     listing = await ListingService.publish_listing(db, listing_id, current_user.id)
     return PublishListingResponse(
@@ -150,10 +164,14 @@ async def upload_listing_image(
     listing_id: uuid.UUID,
     file: UploadFile = File(...),
     scrubbed: bool = Form(False),
-    current_user: Annotated[User, Depends(get_current_user)] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
-):
+    current_user: Annotated[Optional[User], Depends(get_current_user)] = None,
+    db: Annotated[Optional[AsyncSession], Depends(get_db)] = None,
+) -> ListingImageResponse:
     """Upload an image, validate format/size, strip EXIF metadata, and attach to listing."""
+    if current_user is None or db is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required."
+        )
     file_bytes = await file.read()
     clean_bytes, content_type = ImageProcessingService.validate_and_strip_exif(
         file_bytes, file.content_type or "image/jpeg"
@@ -161,13 +179,16 @@ async def upload_listing_image(
 
     storage_path = f"listings/{listing_id}/{uuid.uuid4()}.jpg"
 
-    return await ListingService.add_image(
-        db=db,
-        listing_id=listing_id,
-        seller_id=current_user.id,
-        storage_path=storage_path,
-        scrubbed=scrubbed,
-        quality_score=0.92,
+    return cast(
+        ListingImageResponse,
+        await ListingService.add_image(
+            db=db,
+            listing_id=listing_id,
+            seller_id=current_user.id,
+            storage_path=storage_path,
+            scrubbed=scrubbed,
+            quality_score=0.92,
+        ),
     )
 
 
@@ -175,11 +196,13 @@ async def upload_listing_image(
 async def search_by_image(
     image_hint: str = Query(..., description="Image context or visual signature"),
     limit: int = Query(10, ge=1, le=50),
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
-):
+    db: Annotated[Optional[AsyncSession], Depends(get_db)] = None,
+) -> ListingListResponse:
     """Search active listings using 512-d image embedding similarity."""
     if db is None:
-        return ListingListResponse(total=0, limit=limit, offset=0, items=[], applied_filters={"mode": "image"})
+        return ListingListResponse(
+            total=0, limit=limit, offset=0, items=[], applied_filters={"mode": "image"}
+        )
 
     items, _ = await ListingService.list_listings(db=db, limit=100, offset=0)
     ranked = SearchService.search_by_image(items, image_hint=image_hint, top_k=limit)
@@ -187,7 +210,7 @@ async def search_by_image(
         total=len(ranked),
         limit=limit,
         offset=0,
-        items=ranked,
+        items=cast(list[ListingDetailResponse], ranked),
         applied_filters={"mode": "image", "image_hint": image_hint},
     )
 
@@ -196,19 +219,27 @@ async def search_by_image(
 async def get_similar_listings(
     listing_id: uuid.UUID,
     limit: int = Query(4, ge=1, le=12),
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
-):
+    db: Annotated[Optional[AsyncSession], Depends(get_db)] = None,
+) -> ListingListResponse:
     """Return similar active listings for a given listing detail page."""
     if db is None:
-        return ListingListResponse(total=0, limit=limit, offset=0, items=[], applied_filters={"similar_to": str(listing_id)})
+        return ListingListResponse(
+            total=0,
+            limit=limit,
+            offset=0,
+            items=[],
+            applied_filters={"similar_to": str(listing_id)},
+        )
 
     target = await ListingService.get_listing(db, listing_id)
-    candidates, _ = await ListingService.list_listings(db=db, category=target.category, limit=50, offset=0)
+    candidates, _ = await ListingService.list_listings(
+        db=db, category=target.category, limit=50, offset=0
+    )
     similar = SearchService.find_similar_items(target, candidates, top_k=limit)
     return ListingListResponse(
         total=len(similar),
         limit=limit,
         offset=0,
-        items=similar,
+        items=cast(list[ListingDetailResponse], similar),
         applied_filters={"similar_to": str(listing_id)},
     )

@@ -6,12 +6,12 @@ from __future__ import annotations
 import enum
 import uuid
 from decimal import Decimal
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
+
+from ml.src.price_estimator import CATEGORY_FALLBACK_MEDIANS, SUBTYPE_MEDIANS
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncSession
     from app.models.identity import User
-    from app.models.corrections import Correction
 
 
 class CorrectionField(str, enum.Enum):
@@ -19,9 +19,6 @@ class CorrectionField(str, enum.Enum):
     SUBTYPE = "subtype"
     CONDITION = "condition"
     PRICE = "price"
-
-
-from ml.src.price_estimator import SUBTYPE_MEDIANS, CATEGORY_FALLBACK_MEDIANS
 
 
 class CorrectionService:
@@ -43,8 +40,12 @@ class CorrectionService:
             return False
 
         # Admin or verified user check
-        is_trusted = getattr(user, "is_verified", False) or getattr(user, "role", "user") == "admin" or (
-            hasattr(user, "trust_score") and user.trust_score and float(user.trust_score) >= 0.5
+        is_trusted = (
+            getattr(user, "is_verified", False)
+            or getattr(user, "role", "user") == "admin"
+            or (
+                hasattr(user, "trust_score") and user.trust_score and float(user.trust_score) >= 0.5
+            )
         )
 
         if not is_trusted:

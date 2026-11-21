@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { use, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -23,7 +23,12 @@ interface MessageItem {
   is_me: boolean;
 }
 
-export default function ChatThreadPage({ params }: { params: { listingId: string } }) {
+export default function ChatThreadPage({
+  params,
+}: {
+  params: Promise<{ listingId: string }>;
+}) {
+  const { listingId: _listingId } = use(params);
   const [messages, setMessages] = useState<MessageItem[]>([
     {
       id: "msg-1",

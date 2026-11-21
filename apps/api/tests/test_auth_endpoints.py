@@ -7,6 +7,7 @@ import httpx
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services.auth_service import auth_service
 
 client = TestClient(app)
 
@@ -24,7 +25,10 @@ def test_register_success() -> None:
         request=httpx.Request("POST", "http://test/signup"),
     )
 
-    with patch.object(httpx.AsyncClient, "post", new_callable=AsyncMock) as mock_post:
+    with (
+        patch.object(auth_service.settings, "supabase_url", "https://mock.supabase.co"),
+        patch.object(httpx.AsyncClient, "post", new_callable=AsyncMock) as mock_post,
+    ):
         mock_post.return_value = mock_response
         response = client.post(
             "/api/v1/auth/register",
@@ -75,7 +79,10 @@ def test_login_success() -> None:
         request=httpx.Request("POST", "http://test/token"),
     )
 
-    with patch.object(httpx.AsyncClient, "post", new_callable=AsyncMock) as mock_post:
+    with (
+        patch.object(auth_service.settings, "supabase_url", "https://mock.supabase.co"),
+        patch.object(httpx.AsyncClient, "post", new_callable=AsyncMock) as mock_post,
+    ):
         mock_post.return_value = mock_response
         response = client.post(
             "/api/v1/auth/login",
@@ -101,7 +108,10 @@ def test_refresh_token_success() -> None:
         request=httpx.Request("POST", "http://test/token"),
     )
 
-    with patch.object(httpx.AsyncClient, "post", new_callable=AsyncMock) as mock_post:
+    with (
+        patch.object(auth_service.settings, "supabase_url", "https://mock.supabase.co"),
+        patch.object(httpx.AsyncClient, "post", new_callable=AsyncMock) as mock_post,
+    ):
         mock_post.return_value = mock_response
         response = client.post(
             "/api/v1/auth/refresh",

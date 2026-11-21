@@ -75,3 +75,8 @@
 | p16-task-3| Cited `ml/data/impact_factors.csv`, sensitivity engine & `IMPACT_METHOD.md` | completed | Traceable LCA citations & displacement range [0.30, 0.80]       |
 | p16-task-4| Swap & Impact routers (`/wishlists`, `/swap/*`, `/impact/*`) & Next.js UI | completed | Explicitly labelled Algorithmic in UI & API                     |
 | p16-task-5| Acceptance tests & Phase 16 completion report                     | completed | All Phase 16 acceptance tests and CI checks passed              |
+| p17-task-1| `PriceDropSuggestion` & `PriceHistory` models + migration `0009`  | completed | RLS enabled on `price_drop_suggestions` & `price_history`       |
+| p17-task-2| Hazard-style price-drop heuristic (`ml/src/price_drop.py`)        | completed | Floor (>=0.60x low) & max 15% single-step drop guardrails       |
+| p17-task-3| Agent-based simulator (`sim/`), 6 experiments & +/-50% sensitivity| completed | Same seed -> identical results; SVG captioned `Synthetic`       |
+| p17-task-4| `POST /ai/price-drop/{listing_id}` & `PriceDropSuggestionCard` UI | completed | Labelled Algorithmic Hazard Heuristic on seller listing page    |
+| p17-task-5| Acceptance tests & Phase 17 completion report                     | completed | All Phase 17 acceptance tests and CI checks passed (M3 done)    |

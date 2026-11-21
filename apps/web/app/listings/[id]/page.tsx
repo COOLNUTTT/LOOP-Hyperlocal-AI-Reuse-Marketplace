@@ -18,6 +18,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import FairDealBadge from "@/components/FairDealBadge";
+import PriceDropSuggestionCard from "@/components/PriceDropSuggestionCard";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
 export default function ListingDetailPage({
@@ -174,6 +175,15 @@ export default function ListingDetailPage({
             </div>
             <VerifiedBadge isVerified={item.seller.is_verified} size="sm" />
           </div>
+
+          {/* Seller Hazard-Style Price-Drop Suggestion Card (Phase 17) */}
+          <PriceDropSuggestionCard
+            currentPrice={item.price_ask}
+            predictedLow={item.price_low}
+            predictedLikely={780}
+            daysActive={8}
+            views={item.views}
+          />
         </div>
       </div>
 

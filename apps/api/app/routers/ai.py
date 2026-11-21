@@ -3,14 +3,15 @@
 
 import time
 from decimal import Decimal
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter
 from ml.src.condition_grader import condition_grader
+from ml.src.price_drop import compute_price_drop_suggestion
 from ml.src.price_estimator import price_estimator
 from ml.src.product_recognition import product_recognizer
 from ml.src.smart_autofill import smart_autofill
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.ai import (
     AIAnalyzePhotosRequest,
@@ -158,3 +159,39 @@ async def analyze_photos(payload: AIAnalyzePhotosRequest) -> AIAnalyzePhotosResp
         needs_confirmation=needs_confirmation,
         latency_ms=latency_ms,
     )
+
+
+class PriceDropRequest(BaseModel):
+    price_ask: float = Field(default=950.0, gt=0)
+    predicted_low: float = Field(default=700.0, gt=0)
+    predicted_likely: float = Field(default=820.0, gt=0)
+    days_active: int = Field(default=8, ge=0)
+    views: int = Field(default=32, ge=0)
+    saves: int = Field(default=1, ge=0)
+    chats_started: int = Field(default=0, ge=0)
+    offers_count: int = Field(default=0, ge=0)
+    category: str = Field(default="electronics")
+
+
+@router.post("/price-drop/{listing_id}")
+async def suggest_price_drop(
+    listing_id: str,
+    payload: Optional[PriceDropRequest] = None,
+) -> dict[str, Any]:
+    """Compute hazard-style price-drop suggestion with floor and 15%-step guardrails."""
+    req = payload or PriceDropRequest()
+    result: dict[str, Any] = dict(
+        compute_price_drop_suggestion(
+            price_ask=req.price_ask,
+            predicted_low=req.predicted_low,
+            predicted_likely=req.predicted_likely,
+            days_active=req.days_active,
+            views=req.views,
+            saves=req.saves,
+            chats_started=req.chats_started,
+            offers_count=req.offers_count,
+            category=req.category,
+        )
+    )
+    result["listing_id"] = listing_id
+    return result

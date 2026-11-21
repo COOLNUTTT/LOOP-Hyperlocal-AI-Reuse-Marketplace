@@ -18,6 +18,7 @@ from app.models.listing import (
     ListingType,
 )
 from app.models.model_version import ModelVersion
+from app.models.price_drop import PriceDropSuggestion, PriceHistory
 from app.models.saved_search import SavedSearch
 from app.models.swap import SwapCycle, SwapProposal, SwapStatus, Wishlist
 
@@ -50,4 +51,6 @@ __all__ = [
     "SwapProposal",
     "SwapStatus",
     "ImpactEvent",
+    "PriceDropSuggestion",
+    "PriceHistory",
 ]

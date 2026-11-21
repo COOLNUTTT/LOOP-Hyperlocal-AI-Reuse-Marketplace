@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
+# Default configuration for LOOP agent-based marketplace simulator (ML_SPEC §9)
+data_origin: simulated
+seed: 42
+days: 30
+population_grid: [100, 500, 1000, 5000, 10000]
+p_fraud_grid: [0.02, 0.05, 0.10, 0.20]
+agent_mix:
+  student: 0.60
+  family: 0.15
+  donor: 0.10
+  reseller: 0.10
+  scammer: 0.05
+behavioural_parameters:
+  price_sensitivity: 1.0
+  wishlist_density: 1.0
+  scammer_ring_intensity: 1.0
+sensitivity_multipliers: [0.5, 1.0, 1.5]

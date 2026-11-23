@@ -1121,6 +1121,51 @@
                     </label>
                   </div>
 
+                  <!-- Photo Upload & Sample Item Toolbar -->
+                  <div class="snap-photo-toolbar">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+                      <label
+                        for="snap-photo-upload"
+                        class="btn btn-secondary btn-sm"
+                        style="cursor: pointer"
+                      >
+                        📷 Upload Photo
+                      </label>
+                      <input
+                        type="file"
+                        id="snap-photo-upload"
+                        accept="image/*"
+                        style="display: none"
+                      />
+                    </div>
+                    <div class="snap-sample-pills" role="group" aria-label="Sample item photos">
+                      <span
+                        style="font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted)"
+                        >Sample:</span
+                      >
+                      <button
+                        type="button"
+                        class="preset-pill snap-sample-pill active"
+                        data-sample="desk"
+                      >
+                        Study Desk
+                      </button>
+                      <button type="button" class="preset-pill snap-sample-pill" data-sample="laptop">
+                        Laptop
+                      </button>
+                      <button
+                        type="button"
+                        class="preset-pill snap-sample-pill"
+                        data-sample="calculator"
+                      >
+                        Calculator
+                      </button>
+                      <button type="button" class="preset-pill snap-sample-pill" data-sample="book">
+                        Textbook
+                      </button>
+                    </div>
+                  </div>
+
                   <!-- Photo preview box with Canvas and draggable scrubber -->
                   <div
                     class="photo-container"
@@ -1145,10 +1190,10 @@
                     <div
                       id="scrubber-draggable-box"
                       class="scrubber-draggable-box"
-                      style="top: 20%; left: 25%; width: 150px; height: 110px"
+                      style="top: 18%; left: 16%; width: 170px; height: 120px"
                       tabindex="0"
                       role="region"
-                      aria-label="Privacy scrubber region. Drag to move pixelation area."
+                      aria-label="Privacy scrubber region. Drag to move or resize corner handle to pixelate area."
                     >
                       <div class="scrubber-handle-label">
                         <svg
@@ -1166,7 +1211,13 @@
                         </svg>
                         <span>Scrubbed area (drag me)</span>
                       </div>
-                      <div class="scrubber-corner-handle" aria-hidden="true"></div>
+                      <div
+                        id="scrubber-resize-handle"
+                        class="scrubber-corner-handle"
+                        role="separator"
+                        aria-label="Drag corner to resize scrubber region"
+                        tabindex="0"
+                      ></div>
                     </div>
 
                     <!-- Grad-CAM Wear Hotspot Overlay (Illustrative) -->
@@ -1259,23 +1310,23 @@
                     <div class="quality-meter-grid">
                       <div class="quality-stat-pill">
                         <div class="stat-label">Sharpness (Laplacian Var)</div>
-                        <div class="stat-val" style="color: var(--color-success)">
+                        <div class="stat-val" id="snap-qual-sharpness" style="color: var(--color-success)">
                           Good (184 &gt; 100)
                         </div>
                       </div>
                       <div class="quality-stat-pill">
                         <div class="stat-label">Luminance / Lighting</div>
-                        <div class="stat-val" style="color: var(--color-success)">
+                        <div class="stat-val" id="snap-qual-luminance" style="color: var(--color-success)">
                           Optimal (142 / 255)
                         </div>
                       </div>
                       <div class="quality-stat-pill">
                         <div class="stat-label">Background Clutter</div>
-                        <div class="stat-val">Low (Clean context)</div>
+                        <div class="stat-val" id="snap-qual-clutter">Low (Clean context)</div>
                       </div>
                       <div class="quality-stat-pill">
                         <div class="stat-label">Inference Latency</div>
-                        <div class="stat-val" style="color: var(--color-primary)">
+                        <div class="stat-val" id="snap-qual-latency" style="color: var(--color-primary)">
                           32 ms (on-device WASM)
                         </div>
                       </div>
@@ -1325,7 +1376,9 @@
                   <!-- Category & Subtype -->
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
                     <div class="form-group">
-                      <label for="snap-category">Category (Conf: 94.2%)</label>
+                      <label for="snap-category"
+                        >Category (<span id="snap-cat-conf-label">Conf: 94.2%</span>)</label
+                      >
                       <select id="snap-category" class="form-select">
                         <option value="furniture" selected>Furniture</option>
                         <option value="electronics">Electronics</option>
@@ -1334,7 +1387,9 @@
                       </select>
                     </div>
                     <div class="form-group">
-                      <label for="snap-subtype">Subtype (Conf: 88.7%)</label>
+                      <label for="snap-subtype"
+                        >Subtype (<span id="snap-sub-conf-label">Conf: 88.7%</span>)</label
+                      >
                       <input type="text" id="snap-subtype" class="form-input" value="Study Desk" />
                     </div>
                   </div>
@@ -1351,7 +1406,9 @@
                       />
                     </div>
                     <div class="form-group">
-                      <label for="snap-condition">Condition Grade (Conf: 84.1%)</label>
+                      <label for="snap-condition"
+                        >Condition Grade (<span id="snap-cond-conf-label">Conf: 84.1%</span>)</label
+                      >
                       <select id="snap-condition" class="form-select">
                         <option value="like_new">Like New</option>
                         <option value="good" selected>Good (Minor wear)</option>
@@ -1397,7 +1454,10 @@
                         <div style="font-size: 0.72rem; color: var(--color-text-muted)">
                           Estimated Conformal Range
                         </div>
-                        <div style="font-size: 1.15rem; font-weight: 800; color: var(--color-text)">
+                        <div
+                          id="snap-conformal-range"
+                          style="font-size: 1.15rem; font-weight: 800; color: var(--color-text)"
+                        >
                           ₹2,200 &mdash; ₹3,400
                         </div>
                       </div>
@@ -1406,6 +1466,7 @@
                           Likely Median
                         </div>
                         <div
+                          id="snap-conformal-median"
                           style="font-size: 1.15rem; font-weight: 800; color: var(--color-primary)"
                         >
                           ₹2,800
@@ -1426,7 +1487,7 @@
                       "
                     >
                       <strong>Top-3 Value Drivers (SHAP Explanation):</strong>
-                      <ul style="margin-left: 16px; margin-top: 4px; line-height: 1.3">
+                      <ul id="snap-shap-list" style="margin-left: 16px; margin-top: 4px; line-height: 1.3">
                         <li>+₹450: Solid engineered wood structure & drawer utility</li>
                         <li>-₹300: Minor surface edge wear detected in condition grade</li>
                         <li>+₹250: High semester-start campus demand for study tables</li>
@@ -1499,14 +1560,28 @@
 
             <!-- Filter Chips Card (Category, Price, Condition, Distance) -->
             <div class="card discover-filter-card">
-              <!-- Hidden synced search input for backwards compatibility & tests -->
-              <input
-                type="text"
-                id="discover-search-input"
-                style="display: none"
-                aria-hidden="true"
-                value="study table under 3000"
-              />
+              <!-- Visible In-Screen Search Input synced with Top Bar -->
+              <div class="discover-search-row" role="search" aria-label="Search campus catalog">
+                <input
+                  type="text"
+                  id="discover-search-input"
+                  class="form-input"
+                  style="flex: 1; min-width: 180px"
+                  placeholder="Search items, e.g. 'laptop', 'mez under 2500', 'calculator'..."
+                  aria-label="Search campus catalog"
+                  value="study table under 3000"
+                />
+                <button type="button" class="btn btn-primary btn-sm" id="discover-search-btn">
+                  Search
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  id="discover-clear-search-btn"
+                >
+                  Show All
+                </button>
+              </div>
               <div class="filter-header-row">
                 <div style="display: flex; align-items: center; gap: 8px">
                   <span style="font-weight: 700; font-size: 0.88rem">Filter Catalog</span>

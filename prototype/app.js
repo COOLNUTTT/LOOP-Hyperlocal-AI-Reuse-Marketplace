@@ -29,6 +29,9 @@
     snap: {
       scrubbed: true,
       showHeatmap: false,
+      sampleKey: "desk",
+      uploadedImageUrl: null,
+      activeProfileKey: "desk",
       title: "Ergonomic Wooden Study Desk with Drawer",
       category: "furniture",
       subtype: "Study Desk",
@@ -38,6 +41,11 @@
       priceLow: 2200,
       priceLikely: 2800,
       priceHigh: 3400,
+      shapReasons: [
+        "+₹450: Solid engineered wood structure & drawer utility",
+        "-₹300: Minor surface edge wear detected in condition grade",
+        "+₹250: High semester-start campus demand for study tables",
+      ],
       initialDraft: {
         title: "Ergonomic Wooden Study Desk with Drawer",
         category: "furniture",
@@ -45,6 +53,12 @@
         brand: "IKEA Micke (Extracted via vision & OCR)",
         condition: "good",
         price: 2600,
+        priceLow: 2200,
+        priceLikely: 2800,
+        priceHigh: 3400,
+        sliderMin: 1000,
+        sliderMax: 5000,
+        sliderStep: 50,
       },
     },
 
@@ -236,6 +250,12 @@
     });
 
     window.scrollTo({ top: 0, behavior: "instant" });
+
+    if (screenId === "snap" && window.LOOP && typeof window.LOOP.refreshSnapCanvas === "function") {
+      requestAnimationFrame(() => {
+        window.LOOP.refreshSnapCanvas();
+      });
+    }
   }
 
   // Theme switcher
@@ -529,6 +549,7 @@
   function initSnapScreen() {
     const canvas = document.getElementById("snap-canvas");
     const scrubBox = document.getElementById("scrubber-draggable-box");
+    const resizeHandle = document.getElementById("scrubber-resize-handle");
     const scrubToggle = document.getElementById("snap-scrub-toggle");
     const faceBox = document.getElementById("scrub-box-face");
     const phoneBox = document.getElementById("scrub-box-phone");
@@ -537,21 +558,518 @@
     const heatmapToggle = document.getElementById("snap-heatmap-toggle");
     const heatmapOverlay = document.getElementById("snap-heatmap-overlay");
     const photoContainer = document.getElementById("snap-photo-box");
+    const photoUploadInput = document.getElementById("snap-photo-upload");
+    const samplePills = document.querySelectorAll(".snap-sample-pill");
 
-    // Load real demo photo onto canvas
+    const titleEl = document.getElementById("snap-title");
+    const categoryEl = document.getElementById("snap-category");
+    const subtypeEl = document.getElementById("snap-subtype");
+    const brandEl = document.getElementById("snap-brand");
+    const conditionEl = document.getElementById("snap-condition");
+    const catConfEl = document.getElementById("snap-cat-conf-label");
+    const subConfEl = document.getElementById("snap-sub-conf-label");
+    const condConfEl = document.getElementById("snap-cond-conf-label");
+    const conformalRangeEl = document.getElementById("snap-conformal-range");
+    const conformalMedianEl = document.getElementById("snap-conformal-median");
+    const shapListEl = document.getElementById("snap-shap-list");
+    const priceSlider = document.getElementById("snap-price-slider");
+    const priceDisplay = document.getElementById("snap-price-display");
+    const fairBadge = document.getElementById("snap-fair-badge");
+
+    const qualSharpnessEl = document.getElementById("snap-qual-sharpness");
+    const qualLuminanceEl = document.getElementById("snap-qual-luminance");
+    const qualClutterEl = document.getElementById("snap-qual-clutter");
+    const qualLatencyEl = document.getElementById("snap-qual-latency");
+
+    const AI_ITEM_PROFILES = {
+      desk: {
+        sampleKey: "desk",
+        title: "Ergonomic Wooden Study Desk with Drawer",
+        category: "furniture",
+        subtype: "Study Desk",
+        brand: "IKEA Micke (Extracted via vision & OCR)",
+        catConf: "94.2%",
+        subConf: "88.7%",
+        condConf: "84.1%",
+        low: 2200,
+        likely: 2800,
+        high: 3400,
+        defaultAsk: 2600,
+        sliderMin: 1000,
+        sliderMax: 5000,
+        sliderStep: 50,
+        drivers: [
+          "Solid engineered wood structure & drawer utility",
+          "Minor surface edge wear detected in condition grade",
+          "High semester-start campus demand for study tables",
+        ],
+      },
+      laptop: {
+        sampleKey: "laptop",
+        title: "Dell Inspiron / ASUS ROG Student Laptop (16GB RAM, SSD)",
+        category: "electronics",
+        subtype: "Laptops & Ultrabooks",
+        brand: "ASUS / Dell Inspiron (Extracted via vision & OCR)",
+        catConf: "96.4%",
+        subConf: "91.8%",
+        condConf: "87.5%",
+        low: 24000,
+        likely: 28000,
+        high: 32500,
+        defaultAsk: 27500,
+        sliderMin: 12000,
+        sliderMax: 50000,
+        sliderStep: 500,
+        drivers: [
+          "16GB RAM + NVMe SSD hardware tier in active student demand",
+          "Chassis & keyboard surface wear adjustment from condition grade",
+          "High engineering coursework resale liquidity on campus",
+        ],
+      },
+      calculator: {
+        sampleKey: "calculator",
+        title: "Casio fx-991EX ClassWiz Scientific Calculator",
+        category: "electronics",
+        subtype: "Scientific Calculator",
+        brand: "Casio fx-991EX (OCR label verified)",
+        catConf: "97.1%",
+        subConf: "94.5%",
+        condConf: "89.2%",
+        low: 750,
+        likely: 950,
+        high: 1200,
+        defaultAsk: 900,
+        sliderMin: 300,
+        sliderMax: 2500,
+        sliderStep: 50,
+        drivers: [
+          "Exam-approved Casio Natural-V.P.A.M. solar unit premium",
+          "Clean LCD & tactile key condition assessment",
+          "Peak Pune University semester exam demand",
+        ],
+      },
+      headphones: {
+        sampleKey: "laptop",
+        title: "Sony WH-1000XM4 Wireless Noise Cancelling Headphones",
+        category: "electronics",
+        subtype: "Wireless Headphones",
+        brand: "Sony / JBL (Brand emblem detected)",
+        catConf: "95.3%",
+        subConf: "90.4%",
+        condConf: "85.6%",
+        low: 3800,
+        likely: 4600,
+        high: 5600,
+        defaultAsk: 4500,
+        sliderMin: 1000,
+        sliderMax: 12000,
+        sliderStep: 100,
+        drivers: [
+          "Active noise cancellation & Bluetooth audio tier premium",
+          "Earcup cushion wear adjustment from condition grade",
+          "Strong hostel study & commute demand",
+        ],
+      },
+      chair: {
+        sampleKey: "desk",
+        title: "GTRACING Ergonomic Study & Gaming Chair",
+        category: "furniture",
+        subtype: "Study & Gaming Chair",
+        brand: "GTRACING / Green Soul (Logo OCR)",
+        catConf: "93.8%",
+        subConf: "89.1%",
+        condConf: "84.9%",
+        low: 3600,
+        likely: 4400,
+        high: 5300,
+        defaultAsk: 4200,
+        sliderMin: 1500,
+        sliderMax: 9000,
+        sliderStep: 100,
+        drivers: [
+          "Steel frame & lumbar cushion ergonomic value boost",
+          "Armrest & caster cosmetic wear adjustment",
+          "Low depreciation in campus hostel corridor",
+        ],
+      },
+      book: {
+        sampleKey: "book",
+        title: "CLRS Introduction to Algorithms (3rd/4th Edition)",
+        category: "books",
+        subtype: "Engineering Textbook",
+        brand: "MIT Press / Pearson (Cover OCR match)",
+        catConf: "96.0%",
+        subConf: "92.3%",
+        condConf: "88.0%",
+        low: 300,
+        likely: 450,
+        high: 650,
+        defaultAsk: 425,
+        sliderMin: 100,
+        sliderMax: 1500,
+        sliderStep: 25,
+        drivers: [
+          "Core CS/Engineering syllabus textbook demand",
+          "Spine integrity & minimal page highlighting adjustment",
+          "High semester-opening textbook reuse velocity",
+        ],
+      },
+      cycle: {
+        sampleKey: "desk",
+        title: "Firefox / Hero Campus Geared Bicycle",
+        category: "hobbies",
+        subtype: "Campus Bicycle",
+        brand: "Hero / Firefox (Frame geometry detected)",
+        catConf: "92.5%",
+        subConf: "87.9%",
+        condConf: "83.4%",
+        low: 3200,
+        likely: 4000,
+        high: 4900,
+        defaultAsk: 3900,
+        sliderMin: 1500,
+        sliderMax: 9000,
+        sliderStep: 100,
+        drivers: [
+          "Alloy frame & commuter utility on Lohegaon campus",
+          "Tire tread & brake wear adjustment from condition grade",
+          "Zero shipping cost hyperlocal hostel pickup",
+        ],
+      },
+      guitar: {
+        sampleKey: "book",
+        title: "Yamaha F280 Acoustic Guitar with Gig Bag",
+        category: "hobbies",
+        subtype: "Acoustic Guitar",
+        brand: "Yamaha F280 (Headstock OCR)",
+        catConf: "94.6%",
+        subConf: "90.2%",
+        condConf: "86.4%",
+        low: 4200,
+        likely: 5000,
+        high: 5900,
+        defaultAsk: 4900,
+        sliderMin: 1500,
+        sliderMax: 10000,
+        sliderStep: 100,
+        drivers: [
+          "Yamaha F280 spruce top acoustic resale benchmark",
+          "Fretboard & body finish wear assessment",
+          "Includes padded gig bag campus club demand",
+        ],
+      },
+    };
+
+    const CATEGORY_BASELINES = {
+      furniture: AI_ITEM_PROFILES.desk,
+      electronics: {
+        ...AI_ITEM_PROFILES.laptop,
+        subtype: "Consumer Electronics",
+        brand: "Detected Brand / Model (OCR)",
+        low: 2800,
+        likely: 3600,
+        high: 4500,
+        defaultAsk: 3500,
+        sliderMin: 500,
+        sliderMax: 15000,
+        sliderStep: 100,
+        drivers: [
+          "Category electronic hardware residual benchmark",
+          "Cosmetic & battery wear factor from condition grade",
+          "Active campus peer demand with local meetup check",
+        ],
+      },
+      books: AI_ITEM_PROFILES.book,
+      hobbies: {
+        ...AI_ITEM_PROFILES.cycle,
+        subtype: "Hobbies & Sports Gear",
+        brand: "Campus Recreation Gear",
+        low: 900,
+        likely: 1300,
+        high: 1800,
+        defaultAsk: 1250,
+        sliderMin: 200,
+        sliderMax: 5000,
+        sliderStep: 50,
+        drivers: [
+          "Recreation & sports equipment campus demand",
+          "Surface wear factor from selected condition grade",
+          "Hyperlocal zero-delivery-cost campus exchange",
+        ],
+      },
+    };
+
+    const CONDITION_MULTIPLIERS = {
+      like_new: { mult: 1.15, label: "Like New condition premium" },
+      good: { mult: 1.0, label: "Minor surface wear detected in condition grade" },
+      fair: { mult: 0.82, label: "Visible scuff & cosmetic discount applied" },
+      poor: { mult: 0.62, label: "Repair-needed condition depreciation applied" },
+    };
+
+    function roundToStep(val, step) {
+      const s = step || 50;
+      return Math.max(s, Math.round(val / s) * s);
+    }
+
+    function inferProfileKeyFromText(text) {
+      const t = (text || "").toLowerCase();
+      if (/\b(laptop|macbook|notebook|ultrabook|inspiron|thinkpad|vivobook|rog|lenovo|hp|dell|asus)\b/.test(t)) {
+        return "laptop";
+      }
+      if (/\b(calc|calculator|casio|ti-84|fx-991|graphing)\b/.test(t)) {
+        return "calculator";
+      }
+      if (/\b(headphone|earphone|airpods|sony|jbl|bose|audio|speaker|mouse|keyboard|monitor)\b/.test(t)) {
+        return "headphones";
+      }
+      if (/\b(chair|gtracing|recliner|stool|kursi)\b/.test(t)) {
+        return "chair";
+      }
+      if (/\b(book|textbook|clrs|algorithm|calculus|tanenbaum|grewal|kitab|novel|notes)\b/.test(t)) {
+        return "book";
+      }
+      if (/\b(cycle|bicycle|bike|mtb|hero|firefox)\b/.test(t)) {
+        return "cycle";
+      }
+      if (/\b(guitar|ukulele|violin|keyboard|cricket|bat|badminton|racket|football|dumbell)\b/.test(t)) {
+        return "guitar";
+      }
+      if (/\b(desk|table|mez|shelf|wardrobe|bed|mattress|lamp)\b/.test(t)) {
+        return "desk";
+      }
+      return null;
+    }
+
+    function drawProceduralItemScene(ctx, cw, ch, sampleKey) {
+      // Warm campus dorm room gradient background
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, ch);
+      bgGrad.addColorStop(0, "#1e293b");
+      bgGrad.addColorStop(0.65, "#0f172a");
+      bgGrad.addColorStop(1, "#334155");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, cw, ch);
+
+      // Subtle desk/floor surface
+      ctx.fillStyle = "#475569";
+      ctx.fillRect(0, ch * 0.68, cw, ch * 0.32);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, ch * 0.68);
+      ctx.lineTo(cw, ch * 0.68);
+      ctx.stroke();
+
+      // Main item illustration in center-right
+      if (sampleKey === "laptop") {
+        // Laptop screen lid
+        ctx.fillStyle = "#0f172a";
+        ctx.strokeStyle = "#94a3b8";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(cw * 0.38, ch * 0.18, cw * 0.48, ch * 0.42, 10);
+        ctx.fill();
+        ctx.stroke();
+
+        // Screen display
+        const scrGrad = ctx.createLinearGradient(cw * 0.4, ch * 0.2, cw * 0.84, ch * 0.56);
+        scrGrad.addColorStop(0, "#065f46");
+        scrGrad.addColorStop(1, "#0284c7");
+        ctx.fillStyle = scrGrad;
+        ctx.fillRect(cw * 0.41, ch * 0.21, cw * 0.42, ch * 0.35);
+
+        // Code lines on screen
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.fillRect(cw * 0.44, ch * 0.26, cw * 0.22, 7);
+        ctx.fillStyle = "#34d399";
+        ctx.fillRect(cw * 0.44, ch * 0.31, cw * 0.3, 6);
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.fillRect(cw * 0.44, ch * 0.36, cw * 0.18, 6);
+        ctx.fillRect(cw * 0.44, ch * 0.41, cw * 0.26, 6);
+
+        // Laptop keyboard deck
+        ctx.fillStyle = "#cbd5e1";
+        ctx.beginPath();
+        ctx.moveTo(cw * 0.38, ch * 0.6);
+        ctx.lineTo(cw * 0.86, ch * 0.6);
+        ctx.lineTo(cw * 0.92, ch * 0.77);
+        ctx.lineTo(cw * 0.32, ch * 0.77);
+        ctx.closePath();
+        ctx.fill();
+
+        // Trackpad
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillRect(cw * 0.54, ch * 0.69, cw * 0.16, ch * 0.06);
+      } else if (sampleKey === "calculator") {
+        // Scientific calculator body
+        ctx.fillStyle = "#1e293b";
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(cw * 0.48, ch * 0.13, cw * 0.3, ch * 0.68, 16);
+        ctx.fill();
+        ctx.stroke();
+
+        // LCD Display
+        ctx.fillStyle = "#a7f3d0";
+        ctx.fillRect(cw * 0.52, ch * 0.19, cw * 0.22, ch * 0.14);
+        ctx.fillStyle = "#064e3b";
+        ctx.font = "bold 16px monospace";
+        ctx.fillText("fx-991EX", cw * 0.535, ch * 0.25);
+        ctx.font = "bold 20px monospace";
+        ctx.fillText("∫ x² dx = 0.33", cw * 0.53, ch * 0.305);
+
+        // Keypad buttons
+        for (let r = 0; r < 5; r++) {
+          for (let c = 0; c < 4; c++) {
+            ctx.fillStyle = r === 4 && c === 3 ? "#059669" : "#475569";
+            ctx.fillRect(cw * 0.52 + c * 33, ch * 0.38 + r * 32, 26, 22);
+          }
+        }
+      } else if (sampleKey === "book") {
+        // Stacked engineering textbooks
+        ctx.fillStyle = "#1d4ed8";
+        ctx.fillRect(cw * 0.4, ch * 0.52, cw * 0.46, ch * 0.18);
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(cw * 0.42, ch * 0.55, cw * 0.42, ch * 0.12);
+
+        ctx.fillStyle = "#047857";
+        ctx.fillRect(cw * 0.43, ch * 0.34, cw * 0.42, ch * 0.18);
+        ctx.fillStyle = "#ecfdf5";
+        ctx.font = "bold 18px sans-serif";
+        ctx.fillText("CLRS ALGORITHMS", cw * 0.46, ch * 0.44);
+        ctx.font = "13px sans-serif";
+        ctx.fillText("3rd Edition • MIT Press", cw * 0.48, ch * 0.485);
+      } else {
+        // Default: Ergonomic Wooden Study Desk with Drawer
+        // Tabletop
+        ctx.fillStyle = "#b45309";
+        ctx.fillRect(cw * 0.3, ch * 0.44, cw * 0.58, ch * 0.08);
+        ctx.fillStyle = "#d97706";
+        ctx.fillRect(cw * 0.3, ch * 0.42, cw * 0.58, ch * 0.03);
+
+        // Legs
+        ctx.fillStyle = "#78350f";
+        ctx.fillRect(cw * 0.33, ch * 0.52, 18, ch * 0.34);
+        ctx.fillRect(cw * 0.82, ch * 0.52, 18, ch * 0.34);
+
+        // Drawer Pedestal
+        ctx.fillStyle = "#92400e";
+        ctx.fillRect(cw * 0.62, ch * 0.52, cw * 0.2, ch * 0.24);
+        ctx.strokeStyle = "#fde68a";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cw * 0.635, ch * 0.54, cw * 0.17, ch * 0.09);
+        ctx.strokeRect(cw * 0.635, ch * 0.65, cw * 0.17, ch * 0.09);
+        ctx.fillStyle = "#fef3c7";
+        ctx.fillRect(cw * 0.7, ch * 0.58, 22, 4);
+        ctx.fillRect(cw * 0.7, ch * 0.69, 22, 4);
+
+        // Desk Lamp on desk
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(cw * 0.77, ch * 0.42);
+        ctx.lineTo(cw * 0.79, ch * 0.24);
+        ctx.lineTo(cw * 0.71, ch * 0.27);
+        ctx.stroke();
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath();
+        ctx.arc(cw * 0.71, ch * 0.28, 12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Visible PII Targets inside the default scrubber region (upper-left / top-20%)
+      // 1) Student ID Card with Face Portrait
+      ctx.fillStyle = "#f8fafc";
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(cw * 0.16, ch * 0.18, 136, 86, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#0284c7";
+      ctx.fillRect(cw * 0.16, ch * 0.18, 136, 20);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 10px sans-serif";
+      ctx.fillText("ADYPU STUDENT ID", cw * 0.18, ch * 0.18 + 14);
+
+      // Face circle in ID card
+      ctx.fillStyle = "#fdba74";
+      ctx.beginPath();
+      ctx.arc(cw * 0.16 + 24, ch * 0.18 + 46, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(cw * 0.16 + 19, ch * 0.18 + 42, 3, 3);
+      ctx.fillRect(cw * 0.16 + 26, ch * 0.18 + 42, 3, 3);
+
+      ctx.fillStyle = "#0f172a";
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillText("Aarav S.", cw * 0.16 + 44, ch * 0.18 + 42);
+      ctx.fillStyle = "#dc2626";
+      ctx.font = "bold 10px monospace";
+      ctx.fillText("ID: 26-CS-104", cw * 0.16 + 44, ch * 0.18 + 57);
+      ctx.fillStyle = "#334155";
+      ctx.fillText("Hostel B-204", cw * 0.16 + 44, ch * 0.18 + 72);
+
+      // 2) Sticky Note with Phone Number
+      ctx.fillStyle = "#fef08a";
+      ctx.fillRect(cw * 0.18, ch * 0.39, 132, 42);
+      ctx.fillStyle = "#713f12";
+      ctx.font = "bold 10px sans-serif";
+      ctx.fillText("Call / WhatsApp:", cw * 0.195, ch * 0.39 + 16);
+      ctx.fillStyle = "#b91c1c";
+      ctx.font = "bold 12px monospace";
+      ctx.fillText("+91 98765-43210", cw * 0.195, ch * 0.39 + 33);
+    }
+
+    function measureCanvasQuality(ctx, cw, ch, isUploaded) {
+      try {
+        const sampleW = Math.min(cw, 200);
+        const sampleH = Math.min(ch, 150);
+        const data = ctx.getImageData(0, 0, sampleW, sampleH).data;
+        let lumSum = 0;
+        let gradSum = 0;
+        const count = sampleW * sampleH;
+        for (let y = 0; y < sampleH; y++) {
+          for (let x = 0; x < sampleW; x++) {
+            const idx = (y * sampleW + x) * 4;
+            const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+            lumSum += lum;
+            if (x > 0) {
+              const pIdx = (y * sampleW + (x - 1)) * 4;
+              const pLum = 0.299 * data[pIdx] + 0.587 * data[pIdx + 1] + 0.114 * data[pIdx + 2];
+              gradSum += Math.abs(lum - pLum);
+            }
+          }
+        }
+        const avgLum = Math.round(lumSum / count);
+        const sharpness = Math.min(340, Math.max(95, Math.round((gradSum / count) * 28)));
+        if (qualSharpnessEl) {
+          qualSharpnessEl.textContent =
+            sharpness >= 100 ? `Good (${sharpness} > 100)` : `Soft (${sharpness} < 100)`;
+          qualSharpnessEl.style.color =
+            sharpness >= 100 ? "var(--color-success)" : "var(--color-warning)";
+        }
+        if (qualLuminanceEl) {
+          qualLuminanceEl.textContent =
+            avgLum >= 45 && avgLum <= 220
+              ? `Optimal (${avgLum} / 255)`
+              : `Check Lighting (${avgLum} / 255)`;
+        }
+        if (qualClutterEl) {
+          qualClutterEl.textContent = isUploaded ? "Verified (On-Device)" : "Low (Clean context)";
+        }
+        if (qualLatencyEl) {
+          qualLatencyEl.textContent = isUploaded
+            ? "28 ms (on-device WASM)"
+            : "32 ms (on-device WASM)";
+        }
+      } catch (_) {}
+    }
+
+    // Load optional demo photo or uploaded photo onto canvas
     const baseImg = new Image();
     let imgLoaded = false;
-    baseImg.crossOrigin = "anonymous";
-    baseImg.onload = function () {
-      imgLoaded = true;
-      renderCanvas();
-    };
-    baseImg.onerror = function () {
-      if (baseImg.src.indexOf("assets/images/") !== -1) {
-        baseImg.src = "images/item-01.jpg";
-      }
-    };
-    baseImg.src = "assets/images/item-01.jpg";
 
     function renderCanvas() {
       if (!canvas) return;
@@ -577,33 +1095,43 @@
           dx = (cw - dw) / 2;
           dy = 0;
         }
-        ctx.fillStyle = "#1e293b";
+        ctx.fillStyle = "#0f172a";
         ctx.fillRect(0, 0, cw, ch);
         ctx.drawImage(baseImg, dx, dy, dw, dh);
       } else {
-        ctx.fillStyle = "#334155";
-        ctx.fillRect(0, 0, cw, ch);
+        drawProceduralItemScene(ctx, cw, ch, state.snap.sampleKey || "desk");
       }
 
       if (state.snap.scrubbed && scrubBox && photoContainer) {
-        const cRect = photoContainer.getBoundingClientRect();
-        const bRect = scrubBox.getBoundingClientRect();
-        const scaleX = cw / (cRect.width || cw);
-        const scaleY = ch / (cRect.height || ch);
+        const cW = photoContainer.clientWidth;
+        const cH = photoContainer.clientHeight;
+        let bx, by, bw, bh;
 
-        let bx = Math.round((bRect.left - cRect.left) * scaleX);
-        let by = Math.round((bRect.top - cRect.top) * scaleY);
-        let bw = Math.round(bRect.width * scaleX);
-        let bh = Math.round(bRect.height * scaleY);
-
-        bx = Math.max(0, Math.min(cw - 10, bx));
-        by = Math.max(0, Math.min(ch - 10, by));
-        bw = Math.max(10, Math.min(cw - bx, bw));
-        bh = Math.max(10, Math.min(ch - by, bh));
-
-        if (bw > 0 && bh > 0) {
-          pixelateRegion(ctx, bx, by, bw, bh, 14);
+        if (cW > 0 && cH > 0) {
+          const scaleX = cw / cW;
+          const scaleY = ch / cH;
+          bx = Math.round(scrubBox.offsetLeft * scaleX);
+          by = Math.round(scrubBox.offsetTop * scaleY);
+          bw = Math.round(scrubBox.offsetWidth * scaleX);
+          bh = Math.round(scrubBox.offsetHeight * scaleY);
+        } else {
+          // Safe fallback when #screen-snap is hidden (display: none)
+          const leftStr = scrubBox.style.left || "16%";
+          const topStr = scrubBox.style.top || "18%";
+          const widthStr = scrubBox.style.width || "170px";
+          const heightStr = scrubBox.style.height || "120px";
+          bx = leftStr.includes("%") ? Math.round((parseFloat(leftStr) / 100) * cw) : parseInt(leftStr, 10);
+          by = topStr.includes("%") ? Math.round((parseFloat(topStr) / 100) * ch) : parseInt(topStr, 10);
+          bw = Math.round(parseInt(widthStr, 10) * 1.2) || 170;
+          bh = Math.round(parseInt(heightStr, 10) * 1.2) || 120;
         }
+
+        bx = Math.max(0, Math.min(cw - 16, bx || 0));
+        by = Math.max(0, Math.min(ch - 16, by || 0));
+        bw = Math.max(16, Math.min(cw - bx, bw || 170));
+        bh = Math.max(16, Math.min(ch - by, bh || 120));
+
+        pixelateRegion(ctx, bx, by, bw, bh, 14);
       }
     }
 
@@ -653,6 +1181,21 @@
       }
     }
 
+    baseImg.crossOrigin = "anonymous";
+    baseImg.onload = function () {
+      imgLoaded = true;
+      renderCanvas();
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) measureCanvasQuality(ctx, canvas.width, canvas.height, Boolean(state.snap.uploadedImageUrl));
+      }
+    };
+    baseImg.onerror = function () {
+      imgLoaded = false;
+      renderCanvas();
+    };
+    renderCanvas();
+
     function applyScrubberUI() {
       if (state.snap.scrubbed) {
         if (scrubBox) scrubBox.style.display = "flex";
@@ -668,7 +1211,7 @@
         }
         if (scrubWarning) scrubWarning.style.display = "none";
         if (scrubStatusText) {
-          scrubStatusText.textContent = "Client-side pixelation active (region draggable)";
+          scrubStatusText.textContent = "Client-side pixelation active (drag or resize corner)";
           scrubStatusText.style.color = "var(--color-success)";
         }
       } else {
@@ -693,15 +1236,21 @@
       renderCanvas();
     }
 
-    // Draggable box pointer events
+    // Draggable box pointer events + Corner resize handle
     if (scrubBox && photoContainer) {
       let isDragging = false;
+      let isResizing = false;
       let startX = 0,
         startY = 0;
       let initialLeft = 0,
-        initialTop = 0;
+        initialTop = 0,
+        initialWidth = 0,
+        initialHeight = 0;
 
       scrubBox.addEventListener("pointerdown", (e) => {
+        if (resizeHandle && (e.target === resizeHandle || resizeHandle.contains(e.target))) {
+          return;
+        }
         isDragging = true;
         try {
           scrubBox.setPointerCapture(e.pointerId);
@@ -717,8 +1266,8 @@
         if (!isDragging) return;
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
-        const maxLeft = photoContainer.clientWidth - scrubBox.offsetWidth;
-        const maxTop = photoContainer.clientHeight - scrubBox.offsetHeight;
+        const maxLeft = Math.max(0, photoContainer.clientWidth - scrubBox.offsetWidth);
+        const maxTop = Math.max(0, photoContainer.clientHeight - scrubBox.offsetHeight);
 
         const newLeft = Math.max(0, Math.min(maxLeft, initialLeft + dx));
         const newTop = Math.max(0, Math.min(maxTop, initialTop + dy));
@@ -742,13 +1291,52 @@
       scrubBox.addEventListener("pointerup", onPointerUp);
       scrubBox.addEventListener("pointercancel", onPointerUp);
 
+      if (resizeHandle) {
+        resizeHandle.addEventListener("pointerdown", (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          isResizing = true;
+          try {
+            resizeHandle.setPointerCapture(e.pointerId);
+          } catch (_) {}
+          startX = e.clientX;
+          startY = e.clientY;
+          initialWidth = scrubBox.offsetWidth;
+          initialHeight = scrubBox.offsetHeight;
+        });
+
+        resizeHandle.addEventListener("pointermove", (e) => {
+          if (!isResizing) return;
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          const maxW = Math.max(64, photoContainer.clientWidth - scrubBox.offsetLeft);
+          const maxH = Math.max(48, photoContainer.clientHeight - scrubBox.offsetTop);
+
+          scrubBox.style.width = `${Math.max(64, Math.min(maxW, initialWidth + dx))}px`;
+          scrubBox.style.height = `${Math.max(48, Math.min(maxH, initialHeight + dy))}px`;
+          renderCanvas();
+        });
+
+        const stopResize = (e) => {
+          if (isResizing) {
+            isResizing = false;
+            try {
+              resizeHandle.releasePointerCapture(e.pointerId);
+            } catch (_) {}
+            renderCanvas();
+          }
+        };
+        resizeHandle.addEventListener("pointerup", stopResize);
+        resizeHandle.addEventListener("pointercancel", stopResize);
+      }
+
       scrubBox.addEventListener("keydown", (e) => {
         const step = e.shiftKey ? 20 : 5;
         let moved = false;
         let curLeft = scrubBox.offsetLeft;
         let curTop = scrubBox.offsetTop;
-        const maxLeft = photoContainer.clientWidth - scrubBox.offsetWidth;
-        const maxTop = photoContainer.clientHeight - scrubBox.offsetHeight;
+        const maxLeft = Math.max(0, photoContainer.clientWidth - scrubBox.offsetWidth);
+        const maxTop = Math.max(0, photoContainer.clientHeight - scrubBox.offsetHeight);
 
         if (e.key === "ArrowLeft") {
           curLeft = Math.max(0, curLeft - step);
@@ -793,7 +1381,180 @@
       });
     }
 
-    // Editable fields correction tracking
+    function updatePriceBadge(val) {
+      val = parseInt(val, 10);
+      if (Number.isNaN(val)) val = state.snap.priceLikely || 2600;
+      state.snap.price = val;
+      if (priceDisplay) priceDisplay.textContent = `₹${val.toLocaleString("en-IN")}`;
+      if (!fairBadge) return;
+
+      const low = state.snap.priceLow;
+      const high = state.snap.priceHigh;
+      if (val < low) {
+        fairBadge.className = "fair-badge great";
+        fairBadge.innerHTML = `🟢 Great Deal &bull; Below likely low (₹${low.toLocaleString("en-IN")})`;
+      } else if (val <= high) {
+        fairBadge.className = "fair-badge fair";
+        fairBadge.innerHTML = "🔵 Fair Price &bull; Within 80% conformal range";
+      } else {
+        fairBadge.className = "fair-badge overpriced";
+        fairBadge.innerHTML = `🟠 Overpriced &bull; Above predicted high (₹${high.toLocaleString("en-IN")})`;
+      }
+    }
+
+    function updateValuationUI(profile, options = {}) {
+      const cond = (conditionEl ? conditionEl.value : state.snap.condition) || "good";
+      const condInfo = CONDITION_MULTIPLIERS[cond] || CONDITION_MULTIPLIERS.good;
+      const step = profile.sliderStep || 50;
+
+      const low = roundToStep(profile.low * condInfo.mult, step);
+      const likely = roundToStep(profile.likely * condInfo.mult, step);
+      const high = Math.max(low + step * 2, roundToStep(profile.high * condInfo.mult, step));
+
+      state.snap.priceLow = low;
+      state.snap.priceLikely = likely;
+      state.snap.priceHigh = high;
+
+      const rawDelta = Math.round(((condInfo.mult - 1) * profile.likely) / step) * step;
+      const condDelta = rawDelta === 0 ? -roundToStep(profile.likely * 0.1, 25) : rawDelta;
+      const condPrefix =
+        condDelta >= 0
+          ? `+₹${condDelta.toLocaleString("en-IN")}`
+          : `-₹${Math.abs(condDelta).toLocaleString("en-IN")}`;
+      const posDriver1 = roundToStep(profile.likely * 0.14, 25);
+      const posDriver2 = roundToStep(profile.likely * 0.09, 25);
+
+      const drivers = [
+        `+₹${posDriver1.toLocaleString("en-IN")}: ${profile.drivers[0]}`,
+        `${condPrefix}: ${condInfo.label}`,
+        `+₹${posDriver2.toLocaleString("en-IN")}: ${profile.drivers[2]}`,
+      ];
+      state.snap.shapReasons = drivers;
+
+      if (conformalRangeEl) {
+        conformalRangeEl.innerHTML = `₹${low.toLocaleString("en-IN")} &mdash; ₹${high.toLocaleString("en-IN")}`;
+      }
+      if (conformalMedianEl) {
+        conformalMedianEl.textContent = `₹${likely.toLocaleString("en-IN")}`;
+      }
+      if (shapListEl) {
+        shapListEl.innerHTML = drivers.map((d) => `<li>${escapeHtml(d)}</li>`).join("");
+      }
+
+      if (priceSlider) {
+        const sMin = roundToStep(profile.sliderMin * Math.min(1, condInfo.mult), step);
+        const sMax = roundToStep(profile.sliderMax * Math.max(1, condInfo.mult), step);
+        priceSlider.min = String(sMin);
+        priceSlider.max = String(sMax);
+        priceSlider.step = String(step);
+
+        let nextAsk = options.resetAsk
+          ? roundToStep((options.explicitAsk || profile.defaultAsk) * condInfo.mult, step)
+          : parseInt(priceSlider.value, 10);
+        if (Number.isNaN(nextAsk) || nextAsk < sMin || nextAsk > sMax) {
+          nextAsk = likely;
+        }
+        priceSlider.value = String(nextAsk);
+        updatePriceBadge(nextAsk);
+      }
+    }
+
+    function applyAiProfile(profileKey, options = {}) {
+      const profile = AI_ITEM_PROFILES[profileKey] || CATEGORY_BASELINES[options.categoryFallback || "furniture"] || AI_ITEM_PROFILES.desk;
+      state.snap.activeProfileKey = profileKey || profile.category;
+
+      if (!options.keepTitle && titleEl) {
+        titleEl.value = profile.title;
+        state.snap.title = profile.title;
+      }
+      if (categoryEl && !options.keepCategory) {
+        categoryEl.value = profile.category;
+        state.snap.category = profile.category;
+      }
+      if (subtypeEl && !options.keepSubtype) {
+        subtypeEl.value = profile.subtype;
+        state.snap.subtype = profile.subtype;
+      }
+      if (brandEl && !options.keepBrand) {
+        brandEl.value = profile.brand;
+        state.snap.brand = profile.brand;
+      }
+      if (catConfEl) catConfEl.textContent = `Conf: ${profile.catConf || "93.4%"}`;
+      if (subConfEl) subConfEl.textContent = `Conf: ${profile.subConf || "88.2%"}`;
+      if (condConfEl) condConfEl.textContent = `Conf: ${profile.condConf || "84.5%"}`;
+
+      if (!state.snap.uploadedImageUrl && profile.sampleKey) {
+        state.snap.sampleKey = profile.sampleKey;
+        imgLoaded = false;
+        samplePills.forEach((p) => {
+          if (p.getAttribute("data-sample") === profile.sampleKey) p.classList.add("active");
+          else p.classList.remove("active");
+        });
+        renderCanvas();
+      }
+
+      updateValuationUI(profile, { resetAsk: options.resetAsk !== false, explicitAsk: options.explicitAsk });
+    }
+
+    // Sample preset switcher
+    samplePills.forEach((pill) => {
+      pill.addEventListener("click", () => {
+        const sample = pill.getAttribute("data-sample");
+        if (!sample) return;
+        state.snap.uploadedImageUrl = null;
+        imgLoaded = false;
+        state.snap.sampleKey = sample;
+        samplePills.forEach((p) => p.classList.remove("active"));
+        pill.classList.add("active");
+
+        const profileKey = sample === "desk" ? "desk" : sample;
+        applyAiProfile(profileKey, { keepTitle: false, resetAsk: true });
+        renderCanvas();
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+          if (ctx) measureCanvasQuality(ctx, canvas.width, canvas.height, false);
+        }
+        showToast(`Loaded sample "${pill.textContent.trim()}" with on-device privacy scrubber`);
+      });
+    });
+
+    // Real photo upload handler
+    if (photoUploadInput) {
+      photoUploadInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target && ev.target.result ? String(ev.target.result) : "";
+          if (!dataUrl) return;
+          state.snap.uploadedImageUrl = dataUrl;
+          samplePills.forEach((p) => p.classList.remove("active"));
+          baseImg.src = dataUrl;
+
+          const matchedKey = inferProfileKeyFromText(file.name);
+          if (matchedKey) {
+            applyAiProfile(matchedKey, { keepTitle: false, resetAsk: true });
+          } else {
+            showToast("Photo loaded on-device! Drag/resize the green scrubber over sensitive areas.");
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Auto-adapt AI predictions & conformal pricing when user types in Draft Title (e.g. "laptop")
+    if (titleEl) {
+      titleEl.addEventListener("input", (e) => {
+        const val = e.target.value;
+        state.snap.title = val;
+        const matchedKey = inferProfileKeyFromText(val);
+        if (matchedKey && matchedKey !== state.snap.activeProfileKey) {
+          applyAiProfile(matchedKey, { keepTitle: true, resetAsk: true });
+        }
+      });
+    }
+
+    // Editable fields correction tracking + dynamic pricing recalculation
     const fieldsToTrack = [
       { id: "snap-title", key: "title", label: "Title" },
       { id: "snap-category", key: "category", label: "Category" },
@@ -807,35 +1568,34 @@
       if (el) {
         el.addEventListener("change", (e) => {
           const newVal = e.target.value;
+          state.snap[field.key] = newVal;
+
+          if (field.key === "category") {
+            const catProfile = CATEGORY_BASELINES[newVal] || AI_ITEM_PROFILES.desk;
+            state.snap.activeProfileKey = newVal;
+            if (subtypeEl) {
+              subtypeEl.value = catProfile.subtype;
+              state.snap.subtype = catProfile.subtype;
+            }
+            if (brandEl) {
+              brandEl.value = catProfile.brand;
+              state.snap.brand = catProfile.brand;
+            }
+            updateValuationUI(catProfile, { resetAsk: true });
+          } else if (field.key === "condition") {
+            const curProfile =
+              AI_ITEM_PROFILES[state.snap.activeProfileKey] ||
+              CATEGORY_BASELINES[state.snap.category] ||
+              AI_ITEM_PROFILES.desk;
+            updateValuationUI(curProfile, { resetAsk: false });
+          }
+
           if (newVal !== state.snap.initialDraft[field.key]) {
-            state.snap[field.key] = newVal;
             updateCorrectionsBadge(1, `${field.label} edited to "${newVal}"`);
           }
         });
       }
     });
-
-    // Price Slider & Fair-deal badge
-    const priceSlider = document.getElementById("snap-price-slider");
-    const priceDisplay = document.getElementById("snap-price-display");
-    const fairBadge = document.getElementById("snap-fair-badge");
-
-    function updatePriceBadge(val) {
-      val = parseInt(val, 10);
-      state.snap.price = val;
-      if (priceDisplay) priceDisplay.textContent = `₹${val.toLocaleString("en-IN")}`;
-
-      if (val < state.snap.priceLow) {
-        fairBadge.className = "fair-badge great";
-        fairBadge.innerHTML = "🟢 Great Deal &bull; Below likely low (₹2,200)";
-      } else if (val <= state.snap.priceHigh) {
-        fairBadge.className = "fair-badge fair";
-        fairBadge.innerHTML = "🔵 Fair Price &bull; Within 80% conformal range";
-      } else {
-        fairBadge.className = "fair-badge overpriced";
-        fairBadge.innerHTML = "🟠 Overpriced &bull; Above predicted high (₹3,400)";
-      }
-    }
 
     if (priceSlider) {
       priceSlider.addEventListener("input", (e) => {
@@ -849,32 +1609,172 @@
       updatePriceBadge(priceSlider.value);
     }
 
+    function resetSnapFormAndCanvas() {
+      state.snap.sampleKey = "desk";
+      state.snap.uploadedImageUrl = null;
+      state.snap.activeProfileKey = "desk";
+      imgLoaded = false;
+
+      if (titleEl) titleEl.value = state.snap.initialDraft.title;
+      if (categoryEl) categoryEl.value = state.snap.initialDraft.category;
+      if (subtypeEl) subtypeEl.value = state.snap.initialDraft.subtype;
+      if (brandEl) brandEl.value = state.snap.initialDraft.brand;
+      if (conditionEl) conditionEl.value = state.snap.initialDraft.condition;
+
+      state.snap.title = state.snap.initialDraft.title;
+      state.snap.category = state.snap.initialDraft.category;
+      state.snap.subtype = state.snap.initialDraft.subtype;
+      state.snap.brand = state.snap.initialDraft.brand;
+      state.snap.condition = state.snap.initialDraft.condition;
+      state.snap.priceLow = state.snap.initialDraft.priceLow;
+      state.snap.priceLikely = state.snap.initialDraft.priceLikely;
+      state.snap.priceHigh = state.snap.initialDraft.priceHigh;
+      state.snap.shapReasons = [
+        "+₹450: Solid engineered wood structure & drawer utility",
+        "-₹300: Minor surface edge wear detected in condition grade",
+        "+₹250: High semester-start campus demand for study tables",
+      ];
+
+      if (catConfEl) catConfEl.textContent = "Conf: 94.2%";
+      if (subConfEl) subConfEl.textContent = "Conf: 88.7%";
+      if (condConfEl) condConfEl.textContent = "Conf: 84.1%";
+      if (conformalRangeEl) conformalRangeEl.innerHTML = "₹2,200 &mdash; ₹3,400";
+      if (conformalMedianEl) conformalMedianEl.textContent = "₹2,800";
+      if (shapListEl) {
+        shapListEl.innerHTML = state.snap.shapReasons.map((d) => `<li>${escapeHtml(d)}</li>`).join("");
+      }
+
+      if (priceSlider) {
+        priceSlider.min = String(state.snap.initialDraft.sliderMin);
+        priceSlider.max = String(state.snap.initialDraft.sliderMax);
+        priceSlider.step = String(state.snap.initialDraft.sliderStep);
+        priceSlider.value = String(state.snap.initialDraft.price);
+        updatePriceBadge(state.snap.initialDraft.price);
+      }
+
+      samplePills.forEach((p) => {
+        if (p.getAttribute("data-sample") === "desk") p.classList.add("active");
+        else p.classList.remove("active");
+      });
+
+      if (scrubBox) {
+        scrubBox.style.top = "18%";
+        scrubBox.style.left = "16%";
+        scrubBox.style.width = "170px";
+        scrubBox.style.height = "120px";
+      }
+      renderCanvas();
+    }
+
     // Reset draft button
     const resetBtn = document.getElementById("snap-reset-btn");
     if (resetBtn) {
       resetBtn.addEventListener("click", () => {
-        document.getElementById("snap-title").value = state.snap.initialDraft.title;
-        document.getElementById("snap-category").value = state.snap.initialDraft.category;
-        document.getElementById("snap-subtype").value = state.snap.initialDraft.subtype;
-        document.getElementById("snap-brand").value = state.snap.initialDraft.brand;
-        document.getElementById("snap-condition").value = state.snap.initialDraft.condition;
-        priceSlider.value = state.snap.initialDraft.price;
-        updatePriceBadge(state.snap.initialDraft.price);
+        resetSnapFormAndCanvas();
         showToast("Reset fields to AI initial draft");
       });
     }
 
-    // Confirm & publish draft button
+    // Confirm & publish draft button -> Creates real listing card in Discover feed
     const confirmBtn = document.getElementById("snap-confirm-btn");
     if (confirmBtn) {
       confirmBtn.addEventListener("click", () => {
         if (!state.snap.scrubbed) {
+          if (scrubWarning) {
+            scrubWarning.style.display = "flex";
+            scrubWarning.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
           showToast("❌ Blocked by /scrub-verify: Enable privacy scrubber before publishing.");
           return;
         }
-        showToast("✓ Listing confirmed and published to campus feed!");
+
+        const finalTitle = (titleEl ? titleEl.value : state.snap.title).trim();
+        if (!finalTitle) {
+          if (titleEl) titleEl.focus();
+          showToast("❌ Please enter a listing title before publishing.");
+          return;
+        }
+
+        const catVal = categoryEl ? categoryEl.value : state.snap.category;
+        const catMap = {
+          furniture: "Furniture",
+          electronics: "Electronics",
+          books: "Books",
+          hobbies: "Hobbies & Recreation",
+        };
+        const condVal = conditionEl ? conditionEl.value : state.snap.condition;
+        const condMap = {
+          like_new: "Like New",
+          good: "Good",
+          fair: "Fair",
+          poor: "Poor",
+        };
+
+        const finalSubtype = (subtypeEl ? subtypeEl.value : state.snap.subtype).trim() || "General";
+        const finalBrand = (brandEl ? brandEl.value : state.snap.brand).trim() || "Campus Verified";
+        const finalPrice = parseInt(priceSlider ? priceSlider.value : state.snap.price, 10) || state.snap.priceLikely;
+
+        let badgeText = "Fair Price";
+        let badgeType = "fair";
+        if (finalPrice < state.snap.priceLow) {
+          badgeText = "Great Deal";
+          badgeType = "great";
+        } else if (finalPrice > state.snap.priceHigh) {
+          badgeText = "Overpriced";
+          badgeType = "overpriced";
+        }
+
+        renderCanvas();
+        let scrubbedDataUrl = "";
+        if (canvas) {
+          try {
+            scrubbedDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+          } catch (_) {
+            scrubbedDataUrl = "";
+          }
+        }
+
+        const newListing = {
+          id: "listing-user-" + Date.now(),
+          title: finalTitle,
+          category: catMap[catVal] || "Electronics",
+          subtype: finalSubtype,
+          brand: finalBrand,
+          price: finalPrice,
+          condition: condMap[condVal] || "Good",
+          ageYears: 0.5,
+          areaName: "Lohegaon (ADYPU Campus)",
+          distanceKm: 0.2,
+          postedDaysAgo: 0,
+          description: `${finalTitle}. Brand/Model: ${finalBrand}. Published via Snap-to-List with on-device privacy scrubbing.`,
+          sellerAlias: "You (Verified)",
+          aiPriceRange: {
+            low: state.snap.priceLow,
+            likely: state.snap.priceLikely,
+            high: state.snap.priceHigh,
+          },
+          aiReasons: Array.isArray(state.snap.shapReasons) ? [...state.snap.shapReasons] : [],
+          aiConfidence: 0.93,
+          images: scrubbedDataUrl ? [scrubbedDataUrl] : [],
+          wearHotspots: state.snap.showHeatmap ? [{ x: "48%", y: "52%", r: "10%" }] : [],
+          badge: badgeText,
+          badgeType: badgeType,
+          isUserPublished: true,
+          tags: [catVal, finalSubtype.toLowerCase(), finalBrand.toLowerCase(), ...finalTitle.toLowerCase().split(/\s+/)],
+        };
+
+        if (window.LOOP && typeof window.LOOP.publishSnapListing === "function") {
+          window.LOOP.publishSnapListing(newListing);
+        } else {
+          showToast("✓ Listing confirmed and published to campus feed!");
+        }
       });
     }
+
+    window.LOOP = window.LOOP || {};
+    window.LOOP.refreshSnapCanvas = renderCanvas;
+    window.LOOP.resetSnapUI = resetSnapFormAndCanvas;
+    window.addEventListener("resize", renderCanvas);
   }
 
   // ==========================================
@@ -922,16 +1822,32 @@
             },
           ];
 
+    function isDirectImageSrc(raw) {
+      return (
+        typeof raw === "string" &&
+        (raw.startsWith("data:image/") || raw.startsWith("http") || raw.startsWith("blob:"))
+      );
+    }
+
     function renderItemThumbnail(item) {
       if (item.images && item.images.length > 0) {
         const raw = item.images[0];
+        if (isDirectImageSrc(raw)) {
+          return `<div class="item-thumb-box" style="aspect-ratio: 16/9; width: 100%; overflow: hidden; background-color: var(--color-bg); display: flex; align-items: center; justify-content: center;">
+            <img src="${raw}" alt="${escapeHtml(
+              item.title
+            )}" class="item-thumb-img" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.parentElement.innerHTML=window.LOOP.renderNeutralPendingTile('${escapeHtml(
+              item.category || ""
+            )}', false);">
+          </div>`;
+        }
         const fileName = raw.includes("/") ? raw.split("/").pop() : raw;
         const assetSrc = "assets/images/" + fileName;
         const fallbackSrc = "images/" + fileName;
         return `<div class="item-thumb-box" style="aspect-ratio: 16/9; width: 100%; overflow: hidden; background-color: var(--color-bg); display: flex; align-items: center; justify-content: center;">
           <img src="${assetSrc}" alt="${escapeHtml(
             item.title
-          )}" class="item-thumb-img" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;" onerror="if(this.src.indexOf('assets/images/') !== -1){this.src='${fallbackSrc}';}else{this.onerror=null;this.parentElement.innerHTML=renderNeutralPendingTile('${escapeHtml(
+          )}" class="item-thumb-img" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;" onerror="if(this.src.indexOf('assets/images/') !== -1){this.src='${fallbackSrc}';}else{this.onerror=null;this.parentElement.innerHTML=window.LOOP.renderNeutralPendingTile('${escapeHtml(
             item.category || ""
           )}', false);}">
         </div>`;
@@ -1065,11 +1981,15 @@
         // Standard token match
         const tokens = coreQuery.split(/\s+/).filter(Boolean);
         const filtered = pool.filter((item) => {
+          const itemTags = Array.isArray(item.tags) ? item.tags : [];
           return (
             tokens.length === 0 ||
             tokens.some(
               (t) =>
-                item.title.toLowerCase().includes(t) || item.tags.some((tag) => tag.includes(t))
+                (item.title || "").toLowerCase().includes(t) ||
+                (item.brand || "").toLowerCase().includes(t) ||
+                (item.subtype || "").toLowerCase().includes(t) ||
+                itemTags.some((tag) => String(tag).toLowerCase().includes(t))
             )
           );
         });
@@ -1184,14 +2104,16 @@
               <strong>✨ Semantic Search (384-d pgvector + SQL Parser):</strong>
               ${
                 hinglishMatched
-                  ? `Mapped Hinglish token <code>"mez"</code> &rarr; <code>"Study Desk / Furniture"</code> (Cosine similarity: 0.89). `
+                  ? `Mapped Hinglish token <code>"${escapeHtml(hinglishTerm)}"</code> &rarr; <code>"${escapeHtml(mappedConcept)}"</code> (Cosine similarity: 0.89). `
                   : ""
               }
-              Parsed price ceiling constraint: <code>price &le; ₹${
-                effectiveCeiling === Infinity ? "None" : effectiveCeiling.toLocaleString("en-IN")
+              Parsed price ceiling constraint: <code>${
+                effectiveCeiling === Infinity
+                  ? "price &le; None"
+                  : "price &le; ₹" + effectiveCeiling.toLocaleString("en-IN")
               }</code>. (Retrieved ${
                 filtered.length
-              } matching items across 1,248 simulated campus listings).
+              } matching items across ${getCatalogTotalCount().toLocaleString("en-IN")} campus listings).
             </div>
           `;
         }
@@ -1199,23 +2121,29 @@
       }
     }
 
+    function getCatalogTotalCount() {
+      const userAdded = mockListings.filter((m) => m.isUserPublished).length;
+      return 1248 + userAdded;
+    }
+
     function displayCards(items) {
       const catalogCounter = document.getElementById("discover-catalog-counter");
       const paginationStatus = document.getElementById("discover-pagination-status");
       const loadMoreBtn = document.getElementById("discover-load-more-btn");
+      const totalDisplay = getCatalogTotalCount().toLocaleString("en-IN");
 
       if (items.length === 0) {
         resultsContainer.innerHTML = `
           <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--color-text-muted);">
             <p style="font-weight: 600;">No listings match this specific query and filter combination.</p>
-            <p style="font-size: 0.84rem; margin-top: 6px;">Try clicking "Reset Filters" above to browse the full 1,248 simulated campus listings catalog.</p>
+            <p style="font-size: 0.84rem; margin-top: 6px;">Try clicking "Show All" or "Reset Filters" above to browse all ${totalDisplay} campus listings.</p>
           </div>
         `;
         if (catalogCounter) {
-          catalogCounter.innerHTML = `Catalog: <strong>1,248 Simulated Campus Listings</strong> (0 matches)`;
+          catalogCounter.innerHTML = `Catalog: <strong>${totalDisplay} Campus Listings</strong> (0 matches)`;
         }
         if (paginationStatus)
-          paginationStatus.textContent = "0 matching listings from 1,248 catalog";
+          paginationStatus.textContent = `0 matching listings from ${totalDisplay} catalog`;
         if (loadMoreBtn) loadMoreBtn.style.display = "none";
         return;
       }
@@ -1226,23 +2154,28 @@
       resultsContainer.innerHTML = paged
         .map(
           (item) => `
-        <div class="item-card" data-listing-id="${
+        <div class="item-card${item.isUserPublished ? " item-card-highlight" : ""}" data-listing-id="${escapeHtml(
           item.id
-        }" role="button" tabindex="0" aria-label="View AI price details for ${item.title}">
+        )}" role="button" tabindex="0" aria-label="View AI price details for ${escapeHtml(item.title)}">
           <div class="item-thumbnail">
             ${renderItemThumbnail(item)}
+            ${
+              item.isUserPublished
+                ? `<span style="position: absolute; top: 8px; left: 8px;" class="badge-algo">Just Listed</span>`
+                : ""
+            }
             <span style="position: absolute; top: 8px; right: 8px;" class="fair-badge ${
               item.badgeType
-            }">${item.badge}</span>
+            }">${escapeHtml(item.badge)}</span>
           </div>
           <div class="item-body">
             <div>
-              <h4 class="item-title">${item.title}</h4>
+              <h4 class="item-title">${escapeHtml(item.title)}</h4>
               <p class="item-meta">📍 ${
                 item.distanceKm
-                  ? item.distanceKm + " km • " + (item.areaName || "Campus")
-                  : item.distance || "0.5 km • Campus"
-              } &bull; Condition: <strong>${item.condition}</strong></p>
+                  ? item.distanceKm + " km • " + escapeHtml(item.areaName || "Campus")
+                  : escapeHtml(item.distance || "0.5 km • Campus")
+              } &bull; Condition: <strong>${escapeHtml(item.condition)}</strong></p>
             </div>
             <div class="item-footer">
               <div class="item-price">₹${item.price.toLocaleString("en-IN")}</div>
@@ -1289,11 +2222,11 @@
       });
 
       if (catalogCounter) {
-        catalogCounter.innerHTML = `Catalog: <strong>1,248 Simulated Campus Listings</strong> (${items.length} matched)`;
+        catalogCounter.innerHTML = `Catalog: <strong>${totalDisplay} Campus Listings</strong> (${items.length} matched)`;
       }
 
       if (paginationStatus) {
-        paginationStatus.textContent = `Showing ${paged.length} of ${items.length} matching listings (from 1,248 catalog)`;
+        paginationStatus.textContent = `Showing ${paged.length} of ${items.length} matching listings (from ${totalDisplay} catalog)`;
       }
 
       if (loadMoreBtn) {
@@ -1306,7 +2239,7 @@
         } else {
           loadMoreBtn.style.display = "inline-block";
           loadMoreBtn.disabled = true;
-          loadMoreBtn.textContent = `All ${items.length} Matching Listings Displayed (from 1,248 catalog)`;
+          loadMoreBtn.textContent = `All ${items.length} Matching Listings Displayed (from ${totalDisplay} catalog)`;
         }
       }
     }
@@ -1385,16 +2318,30 @@
     const topSearchInput = document.getElementById("top-search-input");
     const topSearchBtn = document.getElementById("top-search-btn");
     const topImgSearchBtn = document.getElementById("top-img-search-btn");
+    const clearSearchBtn = document.getElementById("discover-clear-search-btn");
 
-    function executeSearch(queryVal) {
-      state.search.query = queryVal;
-      if (searchInput) searchInput.value = queryVal;
-      if (topSearchInput) topSearchInput.value = queryVal;
+    function executeSearch(queryVal, options = {}) {
+      const normalizedQuery = (queryVal || "").trim();
+      state.search.query = normalizedQuery;
+      if (searchInput) searchInput.value = normalizedQuery;
+      if (topSearchInput) topSearchInput.value = normalizedQuery;
+
+      if (options.resetFilters || (normalizedQuery && !options.keepFilters)) {
+        state.search.category = "all";
+        document.querySelectorAll(".discover-filter-card .filter-chip[data-filter='category']").forEach((chip) => {
+          if (chip.getAttribute("data-val") === "all") chip.classList.add("active");
+          else chip.classList.remove("active");
+        });
+      }
+
       state.search.displayCount = 12;
       if (state.currentScreen !== "discover") {
         navigateTo("discover");
       }
       renderResults();
+      if (!options.silent && resultsContainer) {
+        resultsContainer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     }
 
     if (searchBtn && searchInput) {
@@ -1403,8 +2350,24 @@
       });
       searchInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
+          e.preventDefault();
           executeSearch(searchInput.value);
         }
+      });
+    }
+
+    if (clearSearchBtn) {
+      clearSearchBtn.addEventListener("click", () => {
+        state.search.category = "all";
+        state.search.priceCeiling = Infinity;
+        state.search.condition = "all";
+        state.search.maxDistance = Infinity;
+        document.querySelectorAll(".discover-filter-card .filter-chip").forEach((chip) => {
+          if (chip.getAttribute("data-val") === "all") chip.classList.add("active");
+          else chip.classList.remove("active");
+        });
+        executeSearch("", { resetFilters: true });
+        showToast("Showing all campus listings");
       });
     }
 
@@ -1414,6 +2377,7 @@
       });
       topSearchInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
+          e.preventDefault();
           executeSearch(topSearchInput.value);
         }
       });
@@ -1437,22 +2401,14 @@
 
       visGrid.innerHTML = matches
         .map((m) => {
-          const it = (catalogueItems || []).find((c) => c.id === m.id);
+          const it = (mockListings || []).find((c) => c.id === m.id);
           if (!it) return "";
-          const raw = it.images && it.images.length > 0 ? it.images[0] : "";
-          const fileName = raw.includes("/") ? raw.split("/").pop() : raw;
-          const assetSrc = "assets/images/" + fileName;
-          const fallbackSrc = "images/" + fileName;
           return `
-            <div class="visual-similar-card" data-id="${
+            <div class="visual-similar-card" data-id="${escapeHtml(
               it.id
-            }" tabindex="0" role="button" aria-label="Visual match: ${escapeHtml(it.title)}">
+            )}" tabindex="0" role="button" aria-label="Visual match: ${escapeHtml(it.title)}">
               <span class="visual-similarity-pill">${m.score}% Visual Match</span>
-              <div style="aspect-ratio: 16/9; width: 100%; overflow: hidden; background-color: var(--color-bg); display: flex; align-items: center; justify-content: center;">
-                <img src="${assetSrc}" alt="${escapeHtml(
-                  it.title
-                )}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.src='${fallbackSrc}';">
-              </div>
+              ${renderItemThumbnail(it)}
               <div style="padding: 10px;">
                 <div style="font-weight: 700; font-size: 0.84rem; color: var(--color-text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(
                   it.title
@@ -1464,7 +2420,7 @@
                   <span class="fair-badge ${
                     it.badgeType || "fair"
                   }" style="font-size: 0.68rem; padding: 2px 6px;">${
-                    it.badge || "Fair Price"
+                    escapeHtml(it.badge || "Fair Price")
                   }</span>
                 </div>
               </div>
@@ -1475,7 +2431,7 @@
 
       visGrid.querySelectorAll(".visual-similar-card").forEach((card) => {
         const id = card.getAttribute("data-id");
-        const found = (catalogueItems || []).find((c) => c.id === id);
+        const found = (mockListings || []).find((c) => c.id === id);
         if (found) {
           card.addEventListener("click", () => openListingDetailModal(found, card));
           card.addEventListener("keydown", (e) => {
@@ -1554,6 +2510,26 @@
 
     // Initial render
     renderResults();
+
+    window.LOOP = window.LOOP || {};
+    window.LOOP.renderNeutralPendingTile = renderNeutralPendingTile;
+    window.LOOP.executeDiscoverSearch = executeSearch;
+    window.LOOP.publishSnapListing = function (newListing) {
+      mockListings.unshift(newListing);
+      state.search.category = "all";
+      state.search.priceCeiling = Infinity;
+      state.search.condition = "all";
+      state.search.maxDistance = Infinity;
+      document.querySelectorAll(".discover-filter-card .filter-chip").forEach((chip) => {
+        if (chip.getAttribute("data-val") === "all") chip.classList.add("active");
+        else chip.classList.remove("active");
+      });
+      executeSearch("", { resetFilters: true });
+      if (resultsContainer) {
+        resultsContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      showToast(`✓ "${newListing.title}" published to Discover feed!`);
+    };
   }
 
   // ==========================================
@@ -1577,9 +2553,12 @@
     if (photoEl) {
       if (item.images && item.images.length > 0) {
         const raw = item.images[0];
-        const fileName = raw.includes("/") ? raw.split("/").pop() : raw;
-        const assetSrc = "assets/images/" + fileName;
-        const fallbackSrc = "images/" + fileName;
+        const isDirect =
+          typeof raw === "string" &&
+          (raw.startsWith("data:image/") || raw.startsWith("http") || raw.startsWith("blob:"));
+        const fileName = !isDirect && raw.includes("/") ? raw.split("/").pop() : raw;
+        const assetSrc = isDirect ? raw : "assets/images/" + fileName;
+        const fallbackSrc = isDirect ? raw : "images/" + fileName;
         const hotspotsHtml = (item.wearHotspots || [])
           .map(
             (h, i) => `
@@ -1591,18 +2570,23 @@
         `
           )
           .join("");
+        const onerrorAttr = isDirect
+          ? `this.onerror=null;this.parentElement.innerHTML=window.LOOP.renderNeutralPendingTile('${escapeHtml(
+              item.category || ""
+            )}', true);`
+          : `if(this.src.indexOf('assets/images/') !== -1){this.src='${fallbackSrc}';}else{this.onerror=null;this.parentElement.innerHTML=window.LOOP.renderNeutralPendingTile('${escapeHtml(
+              item.category || ""
+            )}', true);}`;
         photoEl.innerHTML = `
           <div class="modal-detail-img-wrap" style="aspect-ratio: 16/10; width: 100%; position: relative; overflow: hidden; background-color: var(--color-bg); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md);">
             <img src="${assetSrc}" alt="${escapeHtml(
               item.title
-            )}" class="modal-detail-img" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;" onerror="if(this.src.indexOf('assets/images/') !== -1){this.src='${fallbackSrc}';}else{this.onerror=null;this.parentElement.innerHTML=renderNeutralPendingTile('${escapeHtml(
-              item.category || ""
-            )}', true);}">
+            )}" class="modal-detail-img" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;" onerror="${onerrorAttr}">
             ${hotspotsHtml}
           </div>
         `;
       } else {
-        photoEl.innerHTML = `<div class="modal-detail-img-wrap" style="width: 100%;">${renderNeutralPendingTile(
+        photoEl.innerHTML = `<div class="modal-detail-img-wrap" style="width: 100%;">${window.LOOP.renderNeutralPendingTile(
           item.category,
           true
         )}</div>`;
@@ -2699,32 +3683,35 @@
     closeEmailPreviewModal();
 
     // 1. Reset Snap-to-List
-    state.snap.title = state.snap.initialDraft.title;
-    state.snap.category = state.snap.initialDraft.category;
-    state.snap.subtype = state.snap.initialDraft.subtype;
-    state.snap.brand = state.snap.initialDraft.brand;
-    state.snap.condition = state.snap.initialDraft.condition;
-    state.snap.price = state.snap.initialDraft.price;
+    if (window.LOOP && typeof window.LOOP.resetSnapUI === "function") {
+      window.LOOP.resetSnapUI();
+    } else {
+      state.snap.title = state.snap.initialDraft.title;
+      state.snap.category = state.snap.initialDraft.category;
+      state.snap.subtype = state.snap.initialDraft.subtype;
+      state.snap.brand = state.snap.initialDraft.brand;
+      state.snap.condition = state.snap.initialDraft.condition;
+      state.snap.price = state.snap.initialDraft.price;
+      const snapTitle = document.getElementById("snap-title");
+      if (snapTitle) snapTitle.value = state.snap.initialDraft.title;
+      const snapCategory = document.getElementById("snap-category");
+      if (snapCategory) snapCategory.value = state.snap.initialDraft.category;
+      const snapSubtype = document.getElementById("snap-subtype");
+      if (snapSubtype) snapSubtype.value = state.snap.initialDraft.subtype;
+      const snapBrand = document.getElementById("snap-brand");
+      if (snapBrand) snapBrand.value = state.snap.initialDraft.brand;
+      const snapCondition = document.getElementById("snap-condition");
+      if (snapCondition) snapCondition.value = state.snap.initialDraft.condition;
+      const snapSlider = document.getElementById("snap-price-slider");
+      if (snapSlider) {
+        snapSlider.value = state.snap.initialDraft.price;
+        const snapDisplay = document.getElementById("snap-price-display");
+        if (snapDisplay)
+          snapDisplay.textContent = `₹${state.snap.initialDraft.price.toLocaleString("en-IN")}`;
+      }
+    }
     state.snap.scrubbed = true;
     state.snap.showHeatmap = false;
-
-    const snapTitle = document.getElementById("snap-title");
-    if (snapTitle) snapTitle.value = state.snap.initialDraft.title;
-    const snapCategory = document.getElementById("snap-category");
-    if (snapCategory) snapCategory.value = state.snap.initialDraft.category;
-    const snapSubtype = document.getElementById("snap-subtype");
-    if (snapSubtype) snapSubtype.value = state.snap.initialDraft.subtype;
-    const snapBrand = document.getElementById("snap-brand");
-    if (snapBrand) snapBrand.value = state.snap.initialDraft.brand;
-    const snapCondition = document.getElementById("snap-condition");
-    if (snapCondition) snapCondition.value = state.snap.initialDraft.condition;
-    const snapSlider = document.getElementById("snap-price-slider");
-    if (snapSlider) {
-      snapSlider.value = state.snap.initialDraft.price;
-      const snapDisplay = document.getElementById("snap-price-display");
-      if (snapDisplay)
-        snapDisplay.textContent = `₹${state.snap.initialDraft.price.toLocaleString("en-IN")}`;
-    }
     const snapScrubToggle = document.getElementById("snap-scrub-toggle");
     if (snapScrubToggle) {
       snapScrubToggle.checked = true;
@@ -3463,7 +4450,7 @@
   }
 
   // Helper for cross-screen chat and discover opening
-  window.LOOP = {
+  window.LOOP = Object.assign(window.LOOP || {}, {
     navigateToDiscover: function (category) {
       navigateTo("discover");
       const searchInput = document.getElementById("discover-search-input");
@@ -3481,8 +4468,12 @@
           else chip.classList.remove("active");
         }
       });
-      const sBtn = document.getElementById("discover-search-btn");
-      if (sBtn) sBtn.click();
+      if (typeof window.LOOP.executeDiscoverSearch === "function") {
+        window.LOOP.executeDiscoverSearch("", { keepFilters: true, silent: true });
+      } else {
+        const sBtn = document.getElementById("discover-search-btn");
+        if (sBtn) sBtn.click();
+      }
       showToast("Exploring full campus catalog (1,248 simulated listings)");
     },
     openChatWithItem: function (itemTitle, itemPrice) {
@@ -3492,7 +4483,7 @@
         headerItem.textContent = `${itemTitle} (₹${itemPrice.toLocaleString("en-IN")})`;
       showToast(`Switched to active chat context for: ${itemTitle}`);
     },
-  };
+  });
 
   // Document Ready Initialization
   document.addEventListener("DOMContentLoaded", () => {

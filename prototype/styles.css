@@ -232,9 +232,9 @@ textarea:focus-visible,
 
 /* Prominent Sticky Search Bar in Top Bar */
 .top-search-wrap {
-  flex: 1;
+  flex: 1 1 280px;
   max-width: 520px;
-  min-width: 0;
+  min-width: 240px;
 }
 
 .top-search-input-group {
@@ -261,8 +261,8 @@ textarea:focus-visible,
 }
 
 .top-search-input {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 120px;
+  min-width: 110px;
   border: none;
   background: transparent;
   outline: none;
@@ -966,12 +966,62 @@ textarea:focus-visible,
 
 .scrubber-corner-handle {
   align-self: flex-end;
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid #34d399;
-  border-bottom: 2px solid #34d399;
-  margin: 4px;
-  pointer-events: none;
+  width: 18px;
+  height: 18px;
+  border-right: 3px solid #34d399;
+  border-bottom: 3px solid #34d399;
+  margin: 3px;
+  pointer-events: auto;
+  cursor: nwse-resize;
+  touch-action: none;
+  border-bottom-right-radius: 3px;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.scrubber-corner-handle:hover,
+.scrubber-corner-handle:focus-visible {
+  border-color: #6ee7b7;
+  transform: scale(1.1);
+}
+
+.snap-photo-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.snap-sample-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.snap-sample-pill.active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .snap-sample-pill.active {
+  color: #022c22;
+}
+
+.discover-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.item-card-highlight {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.28) !important;
 }
 
 .snap-heatmap-overlay {
@@ -2409,6 +2459,40 @@ input[type="range"]:focus-visible {
 }
 
 /* Responsive queries */
+@media (max-width: 1420px) and (min-width: 769px) {
+  .community-pill {
+    max-width: 185px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .top-img-search-btn .img-search-label,
+  #header-backend-btn .backend-btn-label,
+  .top-actions .btn-corrections span.label-text {
+    display: none;
+  }
+}
+
+@media (max-width: 1220px) and (min-width: 769px) {
+  .community-pill {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) and (min-width: 769px) {
+  .top-nav-row {
+    flex-wrap: wrap;
+  }
+
+  .top-search-wrap {
+    order: 4;
+    flex: 1 0 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .menu-drawer-btn {
     display: inline-flex;
@@ -2511,7 +2595,12 @@ input[type="range"]:focus-visible {
     flex: 0 0 100%;
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     margin-top: 4px;
+  }
+
+  .top-search-input {
+    min-width: 0;
   }
 
   .modal-detail-hero {

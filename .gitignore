@@ -52,6 +52,7 @@ ml/mlruns/
 *.pt
 *.pth
 *.onnx
+!prototype/models/face_detection_yunet.onnx
 *.bin
 
 # Database & local storage

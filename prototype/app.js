@@ -30,6 +30,10 @@
     snap: {
       scrubbed: true,
       showHeatmap: false,
+      showManualBox: true,
+      isScanning: false,
+      lastScanSummary: "",
+      autoDetectedBoxes: [],
       sampleKey: "desk",
       uploadedImageUrl: null,
       activeProfileKey: "desk",
@@ -481,16 +485,48 @@
     return newMail;
   }
 
+  /** Resolve direct/relative image URLs so `media/...`, data URIs, and legacy asset filenames all load cleanly. */
+  function resolveListingImagePaths(raw) {
+    if (typeof raw !== "string" || !raw) {
+      return { isDirect: true, assetSrc: "", fallbackSrc: "" };
+    }
+    if (
+      raw.startsWith("data:image/") ||
+      raw.startsWith("http") ||
+      raw.startsWith("blob:") ||
+      raw.startsWith("media/") ||
+      raw.startsWith("./media/")
+    ) {
+      return { isDirect: true, assetSrc: raw, fallbackSrc: raw };
+    }
+    const fileName = raw.includes("/") ? raw.split("/").pop() : raw;
+    return {
+      isDirect: false,
+      assetSrc: "assets/images/" + fileName,
+      fallbackSrc: "images/" + fileName,
+    };
+  }
+
   function renderBackendTables() {
     const mailsTbody = document.getElementById("backend-mails-tbody");
     const usersTbody = document.getElementById("backend-users-tbody");
+    const listingsTbody = document.getElementById("backend-listings-tbody");
     const mailCountBadge = document.getElementById("admin-mail-count");
     const userCountBadge = document.getElementById("admin-user-count");
+    const listingsCountBadge = document.getElementById("admin-listings-count");
     const headerMailCount = document.getElementById("header-mail-count");
+
+    const activeListings =
+      window.LOOP && typeof window.LOOP.getAllListings === "function"
+        ? window.LOOP.getAllListings()
+        : Array.isArray(window.LOOP_CATALOGUE)
+          ? window.LOOP_CATALOGUE
+          : [];
 
     if (mailCountBadge) mailCountBadge.textContent = backendStore.mails.length;
     if (headerMailCount) headerMailCount.textContent = backendStore.mails.length;
     if (userCountBadge) userCountBadge.textContent = backendStore.users.length;
+    if (listingsCountBadge) listingsCountBadge.textContent = activeListings.length;
 
     if (mailsTbody) {
       mailsTbody.innerHTML = backendStore.mails
@@ -536,6 +572,29 @@
           </tr>
         `
         )
+        .join("");
+    }
+
+    if (listingsTbody) {
+      listingsTbody.innerHTML = activeListings
+        .map((item) => {
+          const imgRaw = item.images && item.images.length > 0 ? item.images[0] : "";
+          const { assetSrc } = resolveListingImagePaths(imgRaw);
+          const thumbHtml = assetSrc
+            ? `<img src="${escapeHtml(assetSrc)}" alt="${escapeHtml(item.title)}" style="width:48px;height:36px;object-fit:cover;border-radius:4px;border:1px solid var(--color-border);display:block;" />`
+            : `<span style="font-size:0.72rem;color:var(--color-text-muted);">No Photo</span>`;
+          return `
+          <tr>
+            <td>${thumbHtml}</td>
+            <td><code>${escapeHtml(item.id || "—")}</code></td>
+            <td><strong>${escapeHtml(item.title)}</strong><br><span style="font-size:0.75rem;color:var(--color-text-muted);">${escapeHtml(item.category || "General")} &bull; ${escapeHtml(item.brand || "")}</span></td>
+            <td><strong>₹${(item.price || 0).toLocaleString("en-IN")}</strong></td>
+            <td>${escapeHtml(item.condition || "Good")}</td>
+            <td>${escapeHtml(item.sellerAlias || "Campus Student")}<br><span style="font-size:0.74rem;color:var(--color-text-muted);">${escapeHtml(item.areaName || "ADYPU Campus")}</span></td>
+            <td><span class="fair-badge great">ACTIVE (PostgreSQL)</span></td>
+          </tr>
+        `;
+        })
         .join("");
     }
   }
@@ -600,6 +659,9 @@
     const heatmapOverlay = document.getElementById("snap-heatmap-overlay");
     const photoContainer = document.getElementById("snap-photo-box");
     const photoUploadInput = document.getElementById("snap-photo-upload");
+    const autoBoxesLayer = document.getElementById("snap-auto-boxes-layer");
+    const rescanBtn = document.getElementById("snap-rescan-btn");
+    const toggleManualBtn = document.getElementById("snap-toggle-manual-btn");
     const samplePills = document.querySelectorAll(".snap-sample-pill");
 
     const titleEl = document.getElementById("snap-title");
@@ -799,6 +861,28 @@
           "Includes padded gig bag campus club demand",
         ],
       },
+      phone: {
+        sampleKey: "laptop",
+        title: "Apple iPhone 13 / Samsung Galaxy Smartphone",
+        category: "electronics",
+        subtype: "Smartphones",
+        brand: "Apple / Samsung (Detected via vision & OCR)",
+        catConf: "96.8%",
+        subConf: "93.1%",
+        condConf: "88.4%",
+        low: 28000,
+        likely: 32500,
+        high: 37500,
+        defaultAsk: 31500,
+        sliderMin: 8000,
+        sliderMax: 75000,
+        sliderStep: 500,
+        drivers: [
+          "Flagship smartphone battery health & display condition score",
+          "Unlocked 5G storage tier campus peer liquidity",
+          "Zero screen cracks or biometric sensor depreciation",
+        ],
+      },
     };
 
     const CATEGORY_BASELINES = {
@@ -854,6 +938,9 @@
 
     function inferProfileKeyFromText(text) {
       const t = (text || "").toLowerCase();
+      if (/\b(phone|iphone|samsung|galaxy|smartphone|mobile|oneplus|pixel|redmi|xiaomi)\b/.test(t)) {
+        return "phone";
+      }
       if (/\b(laptop|macbook|notebook|ultrabook|inspiron|thinkpad|vivobook|rog|lenovo|hp|dell|asus)\b/.test(t)) {
         return "laptop";
       }
@@ -1111,14 +1198,15 @@
     // Load optional demo photo or uploaded photo onto canvas
     const baseImg = new Image();
     let imgLoaded = false;
+    let autoScanSeq = 0;
 
-    function renderCanvas() {
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
+    function renderRawImageToCanvas(targetCanvas) {
+      if (!targetCanvas) return;
+      const ctx = targetCanvas.getContext("2d");
       if (!ctx) return;
 
-      const cw = canvas.width;
-      const ch = canvas.height;
+      const cw = targetCanvas.width;
+      const ch = targetCanvas.height;
       ctx.clearRect(0, 0, cw, ch);
 
       if (imgLoaded && baseImg.naturalWidth) {
@@ -1142,6 +1230,16 @@
       } else {
         drawProceduralItemScene(ctx, cw, ch, state.snap.sampleKey || "desk");
       }
+    }
+
+    function renderCanvas() {
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const cw = canvas.width;
+      const ch = canvas.height;
+      renderRawImageToCanvas(canvas);
 
       if (state.snap.scrubbed) {
         // 1. Always scrub auto-detected PII regions on procedural scenes (Student ID Face & Phone Sticky Note)
@@ -1150,8 +1248,19 @@
           pixelateRegion(ctx, Math.round(cw * 0.18), Math.round(ch * 0.39), 134, 44, 10);
         }
 
-        // 2. Scrub custom draggable scrubber box region
-        if (scrubBox && photoContainer) {
+        // 2. Scrub all real auto-detected PII boxes (Faces, Phones, Vehicle Plates, ID Cards)
+        if (Array.isArray(state.snap.autoDetectedBoxes)) {
+          for (const box of state.snap.autoDetectedBoxes) {
+            const bx = Math.max(0, Math.min(cw - 12, Math.round(box.x * cw)));
+            const by = Math.max(0, Math.min(ch - 12, Math.round(box.y * ch)));
+            const bw = Math.max(12, Math.min(cw - bx, Math.round(box.w * cw)));
+            const bh = Math.max(12, Math.min(ch - by, Math.round(box.h * ch)));
+            pixelateRegion(ctx, bx, by, bw, bh, 14);
+          }
+        }
+
+        // 3. Scrub custom draggable scrubber box region if enabled
+        if (state.snap.showManualBox && scrubBox && photoContainer) {
           const rect = canvas.getBoundingClientRect();
           const boxRect = scrubBox.getBoundingClientRect();
           let bx, by, bw, bh;
@@ -1235,13 +1344,124 @@
       }
     }
 
+    function renderAutoBoxesLayer() {
+      if (!autoBoxesLayer) return;
+      const boxes = Array.isArray(state.snap.autoDetectedBoxes) ? state.snap.autoDetectedBoxes : [];
+      if (!boxes.length) {
+        autoBoxesLayer.innerHTML = "";
+        return;
+      }
+
+      const isScrubbed = state.snap.scrubbed;
+      autoBoxesLayer.innerHTML = boxes
+        .map((box) => {
+          const pctX = (box.x * 100).toFixed(2);
+          const pctY = (box.y * 100).toFixed(2);
+          const pctW = (box.w * 100).toFixed(2);
+          const pctH = (box.h * 100).toFixed(2);
+          const confPct = Math.round((box.confidence || 0.85) * 100);
+          const badgeText = isScrubbed
+            ? `✓ ${escapeHtml(box.label)} ${confPct}%`
+            : `⚠️ ${escapeHtml(box.label)}: Exposed`;
+          return `
+            <div
+              class="scrub-box-auto auto-scrub-box ${isScrubbed ? "blurred" : "exposed"}"
+              data-box-id="${escapeHtml(box.id)}"
+              style="left: ${pctX}%; top: ${pctY}%; width: ${pctW}%; height: ${pctH}%"
+            >
+              <span class="scrub-label">${badgeText}</span>
+              <button
+                type="button"
+                class="auto-scrub-remove-btn"
+                data-remove-box-id="${escapeHtml(box.id)}"
+                title="Remove this auto-detected redaction box"
+                aria-label="Remove ${escapeHtml(box.label)} redaction box"
+              >&times;</button>
+            </div>
+          `;
+        })
+        .join("");
+
+      autoBoxesLayer.querySelectorAll(".auto-scrub-remove-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const removeId = btn.getAttribute("data-remove-box-id");
+          state.snap.autoDetectedBoxes = (state.snap.autoDetectedBoxes || []).filter(
+            (b) => b.id !== removeId
+          );
+          if (state.snap.autoDetectedBoxes.length === 0) {
+            state.snap.lastScanSummary =
+              "All auto-detected boxes removed — click Re-Scan Auto-Detect or + Manual Box";
+          } else {
+            state.snap.lastScanSummary = `${state.snap.autoDetectedBoxes.length} auto-detected PII region(s) scrubbed client-side`;
+          }
+          applyScrubberUI();
+        });
+      });
+    }
+
+    async function runAutoDetectionOnCurrentImage() {
+      if (!canvas || !window.LOOPScrubberAutoDetect) return;
+      const mySeq = ++autoScanSeq;
+
+      state.snap.scrubbed = true;
+      if (scrubToggle) scrubToggle.checked = true;
+      state.snap.isScanning = true;
+      state.snap.lastScanSummary = "";
+      applyScrubberUI();
+
+      try {
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = canvas.width;
+        offCanvas.height = canvas.height;
+        renderRawImageToCanvas(offCanvas);
+
+        const res = await window.LOOPScrubberAutoDetect.detectAll(offCanvas);
+        if (mySeq !== autoScanSeq) return;
+
+        state.snap.isScanning = false;
+        state.snap.autoDetectedBoxes = res.boxes || [];
+
+        if (state.snap.autoDetectedBoxes.length > 0 && state.snap.uploadedImageUrl) {
+          state.snap.showManualBox = false;
+        }
+
+        if (state.snap.autoDetectedBoxes.length > 0) {
+          const counts = {};
+          for (const b of state.snap.autoDetectedBoxes) {
+            counts[b.label] = (counts[b.label] || 0) + 1;
+          }
+          const summaryParts = Object.entries(counts).map(([lbl, cnt]) => `${cnt} ${lbl}`);
+          state.snap.lastScanSummary = `✓ Auto-scrubbed ${state.snap.autoDetectedBoxes.length} region(s) (${summaryParts.join(", ")}) in ${res.latencyMs} ms`;
+          showToast(`🔒 Auto-scrubbed: ${summaryParts.join(", ")}`);
+        } else {
+          state.snap.lastScanSummary = `✓ Scan complete (${res.latencyMs} ms): No faces or PII text found — use + Manual Box if needed`;
+        }
+
+        if (qualLatencyEl) {
+          qualLatencyEl.textContent = `${res.latencyMs} ms (${res.engines.face})`;
+        }
+      } catch (err) {
+        if (mySeq !== autoScanSeq) return;
+        state.snap.isScanning = false;
+        state.snap.lastScanSummary = "Auto-scan unavailable offline — drag/resize Manual Box";
+      }
+
+      applyScrubberUI();
+    }
+
     baseImg.crossOrigin = "anonymous";
     baseImg.onload = function () {
       imgLoaded = true;
       applyScrubberUI();
       if (canvas) {
         const ctx = canvas.getContext("2d");
-        if (ctx) measureCanvasQuality(ctx, canvas.width, canvas.height, Boolean(state.snap.uploadedImageUrl));
+        if (ctx) {
+          measureCanvasQuality(ctx, canvas.width, canvas.height, Boolean(state.snap.uploadedImageUrl));
+        }
+      }
+      if (state.snap.uploadedImageUrl) {
+        runAutoDetectionOnCurrentImage();
       }
     };
     baseImg.onerror = function () {
@@ -1251,18 +1471,22 @@
     renderCanvas();
 
     function applyScrubberUI() {
-      const showAutoBoxes = !imgLoaded || !state.snap.uploadedImageUrl;
+      const showProceduralOverlay = !imgLoaded || !state.snap.uploadedImageUrl;
+      if (toggleManualBtn) {
+        toggleManualBtn.textContent = state.snap.showManualBox ? "Hide Manual Box" : "+ Manual Box";
+      }
+
       if (state.snap.scrubbed) {
-        if (scrubBox) scrubBox.style.display = "flex";
+        if (scrubBox) scrubBox.style.display = state.snap.showManualBox ? "flex" : "none";
         if (faceBox) {
-          faceBox.style.display = showAutoBoxes ? "flex" : "none";
+          faceBox.style.display = showProceduralOverlay ? "flex" : "none";
           faceBox.classList.remove("exposed");
           faceBox.classList.add("blurred");
           const lbl = faceBox.querySelector(".scrub-label");
           if (lbl) lbl.textContent = "✓ Face / ID: Blurred";
         }
         if (phoneBox) {
-          phoneBox.style.display = showAutoBoxes ? "flex" : "none";
+          phoneBox.style.display = showProceduralOverlay ? "flex" : "none";
           phoneBox.classList.remove("exposed");
           phoneBox.classList.add("blurred");
           const lbl = phoneBox.querySelector(".scrub-label");
@@ -1270,20 +1494,29 @@
         }
         if (scrubWarning) scrubWarning.style.display = "none";
         if (scrubStatusText) {
-          scrubStatusText.textContent = "Client-side pixelation active (drag or resize corner)";
-          scrubStatusText.style.color = "var(--color-success)";
+          if (state.snap.isScanning) {
+            scrubStatusText.textContent =
+              "🔍 Auto-scanning photo on-device for faces, phones, plates & IDs...";
+            scrubStatusText.style.color = "var(--color-info)";
+          } else if (state.snap.lastScanSummary) {
+            scrubStatusText.textContent = state.snap.lastScanSummary;
+            scrubStatusText.style.color = "var(--color-success)";
+          } else {
+            scrubStatusText.textContent = "Client-side pixelation active (drag or resize corner)";
+            scrubStatusText.style.color = "var(--color-success)";
+          }
         }
       } else {
         if (scrubBox) scrubBox.style.display = "none";
         if (faceBox) {
-          faceBox.style.display = showAutoBoxes ? "flex" : "none";
+          faceBox.style.display = showProceduralOverlay ? "flex" : "none";
           faceBox.classList.remove("blurred");
           faceBox.classList.add("exposed");
           const lbl = faceBox.querySelector(".scrub-label");
           if (lbl) lbl.textContent = "⚠️ Face: Exposed";
         }
         if (phoneBox) {
-          phoneBox.style.display = showAutoBoxes ? "flex" : "none";
+          phoneBox.style.display = showProceduralOverlay ? "flex" : "none";
           phoneBox.classList.remove("blurred");
           phoneBox.classList.add("exposed");
           const lbl = phoneBox.querySelector(".scrub-label");
@@ -1296,6 +1529,7 @@
           scrubStatusText.style.color = "var(--color-danger)";
         }
       }
+      renderAutoBoxesLayer();
       renderCanvas();
     }
 
@@ -1423,6 +1657,23 @@
         applyScrubberUI();
       });
       applyScrubberUI();
+    }
+
+    if (rescanBtn) {
+      rescanBtn.addEventListener("click", () => {
+        runAutoDetectionOnCurrentImage();
+      });
+    }
+
+    if (toggleManualBtn) {
+      toggleManualBtn.addEventListener("click", () => {
+        state.snap.showManualBox = !state.snap.showManualBox;
+        if (state.snap.showManualBox && !state.snap.scrubbed) {
+          state.snap.scrubbed = true;
+          if (scrubToggle) scrubToggle.checked = true;
+        }
+        applyScrubberUI();
+      });
     }
 
     const burnScrubBtn = document.getElementById("snap-burn-scrub-btn");
@@ -1568,7 +1819,12 @@
       pill.addEventListener("click", () => {
         const sample = pill.getAttribute("data-sample");
         if (!sample) return;
+        autoScanSeq++;
         state.snap.uploadedImageUrl = null;
+        state.snap.autoDetectedBoxes = [];
+        state.snap.lastScanSummary = "";
+        state.snap.isScanning = false;
+        state.snap.showManualBox = true;
         imgLoaded = false;
         state.snap.sampleKey = sample;
         samplePills.forEach((p) => p.classList.remove("active"));
@@ -1576,7 +1832,7 @@
 
         const profileKey = sample === "desk" ? "desk" : sample;
         applyAiProfile(profileKey, { keepTitle: false, resetAsk: true });
-        renderCanvas();
+        applyScrubberUI();
         if (canvas) {
           const ctx = canvas.getContext("2d");
           if (ctx) measureCanvasQuality(ctx, canvas.width, canvas.height, false);
@@ -1585,7 +1841,7 @@
       });
     });
 
-    // Real photo upload handler
+    // Real photo upload handler (auto-triggers YuNet + OCR PII detection on load)
     if (photoUploadInput) {
       photoUploadInput.addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
@@ -1595,14 +1851,14 @@
           const dataUrl = ev.target && ev.target.result ? String(ev.target.result) : "";
           if (!dataUrl) return;
           state.snap.uploadedImageUrl = dataUrl;
+          state.snap.autoDetectedBoxes = [];
+          state.snap.lastScanSummary = "";
           samplePills.forEach((p) => p.classList.remove("active"));
           baseImg.src = dataUrl;
 
           const matchedKey = inferProfileKeyFromText(file.name);
           if (matchedKey) {
             applyAiProfile(matchedKey, { keepTitle: false, resetAsk: true });
-          } else {
-            showToast("Photo loaded on-device! Drag/resize the green scrubber over sensitive areas.");
           }
         };
         reader.readAsDataURL(file);
@@ -1677,8 +1933,13 @@
     }
 
     function resetSnapFormAndCanvas() {
+      autoScanSeq++;
       state.snap.sampleKey = "desk";
       state.snap.uploadedImageUrl = null;
+      state.snap.autoDetectedBoxes = [];
+      state.snap.lastScanSummary = "";
+      state.snap.isScanning = false;
+      state.snap.showManualBox = true;
       state.snap.activeProfileKey = "desk";
       imgLoaded = false;
 
@@ -1730,7 +1991,7 @@
         scrubBox.style.width = "170px";
         scrubBox.style.height = "120px";
       }
-      renderCanvas();
+      applyScrubberUI();
     }
 
     // Reset draft button
@@ -1890,27 +2151,22 @@
           ];
 
     function isDirectImageSrc(raw) {
-      return (
-        typeof raw === "string" &&
-        (raw.startsWith("data:image/") || raw.startsWith("http") || raw.startsWith("blob:"))
-      );
+      return resolveListingImagePaths(raw).isDirect;
     }
 
     function renderItemThumbnail(item) {
       if (item.images && item.images.length > 0) {
         const raw = item.images[0];
-        if (isDirectImageSrc(raw)) {
+        const { isDirect, assetSrc, fallbackSrc } = resolveListingImagePaths(raw);
+        if (isDirect) {
           return `<div class="item-thumb-box" style="aspect-ratio: 16/9; width: 100%; overflow: hidden; background-color: var(--color-bg); display: flex; align-items: center; justify-content: center;">
-            <img src="${raw}" alt="${escapeHtml(
+            <img src="${assetSrc}" alt="${escapeHtml(
               item.title
-            )}" class="item-thumb-img" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.parentElement.innerHTML=window.LOOP.renderNeutralPendingTile('${escapeHtml(
+            )}" class="item-thumb-img" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.parentElement.innerHTML=window.LOOP.renderNeutralPendingTile('${escapeHtml(
               item.category || ""
             )}', false);">
           </div>`;
         }
-        const fileName = raw.includes("/") ? raw.split("/").pop() : raw;
-        const assetSrc = "assets/images/" + fileName;
-        const fallbackSrc = "images/" + fileName;
         return `<div class="item-thumb-box" style="aspect-ratio: 16/9; width: 100%; overflow: hidden; background-color: var(--color-bg); display: flex; align-items: center; justify-content: center;">
           <img src="${assetSrc}" alt="${escapeHtml(
             item.title
@@ -2074,12 +2330,16 @@
         }
         displayCards(filtered);
       } else {
-        // Semantic search behavior: ranked multi-field search with Hinglish synonym expansion
+        // Semantic search behavior: ranked multi-field search with Hinglish & product synonym expansion
         const HINGLISH_SYNONYMS = {
           mez: ["desk", "table", "study"],
           kursi: ["chair", "seating", "gaming"],
-          kitab: ["book", "textbook", "algorithms", "calculus", "tanenbaum", "clrs"],
-          pustak: ["book", "textbook", "algorithms", "calculus", "tanenbaum", "clrs"],
+          kitab: ["book", "textbook", "algorithms", "calculus", "tanenbaum", "clrs", "grewal"],
+          pustak: ["book", "textbook", "algorithms", "calculus", "tanenbaum", "clrs", "grewal"],
+          phone: ["iphone", "samsung", "galaxy", "smartphone", "mobile"],
+          mobile: ["iphone", "samsung", "galaxy", "smartphone", "phone"],
+          smartphone: ["iphone", "samsung", "galaxy", "phone", "mobile"],
+          laptop: ["macbook", "asus", "rog", "notebook", "ultrabook"],
         };
         const STOPWORDS = new Set(["for", "and", "the", "with", "in", "on", "of", "a", "an", "to"]);
 
@@ -2594,8 +2854,12 @@
     window.LOOP = window.LOOP || {};
     window.LOOP.renderNeutralPendingTile = renderNeutralPendingTile;
     window.LOOP.executeDiscoverSearch = executeSearch;
+    window.LOOP.getAllListings = function () {
+      return mockListings;
+    };
     window.LOOP.publishSnapListing = function (newListing) {
       mockListings.unshift(newListing);
+      renderBackendTables();
       state.search.category = "all";
       state.search.priceCeiling = Infinity;
       state.search.condition = "all";
@@ -2630,12 +2894,7 @@
 
     if (item.images && item.images.length > 0) {
       const raw = item.images[0];
-      const isDirect =
-        typeof raw === "string" &&
-        (raw.startsWith("data:image/") || raw.startsWith("http") || raw.startsWith("blob:"));
-      const fileName = !isDirect && raw.includes("/") ? raw.split("/").pop() : raw;
-      const assetSrc = isDirect ? raw : "assets/images/" + fileName;
-      const fallbackSrc = isDirect ? raw : "images/" + fileName;
+      const { isDirect, assetSrc, fallbackSrc } = resolveListingImagePaths(raw);
       const onerrorAttr = isDirect
         ? `this.onerror=null;this.parentElement.innerHTML=window.LOOP.renderNeutralPendingTile('${escapeHtml(
             item.category || ""
@@ -2694,12 +2953,7 @@
     if (photoEl) {
       if (item.images && item.images.length > 0) {
         const raw = item.images[0];
-        const isDirect =
-          typeof raw === "string" &&
-          (raw.startsWith("data:image/") || raw.startsWith("http") || raw.startsWith("blob:"));
-        const fileName = !isDirect && raw.includes("/") ? raw.split("/").pop() : raw;
-        const assetSrc = isDirect ? raw : "assets/images/" + fileName;
-        const fallbackSrc = isDirect ? raw : "images/" + fileName;
+        const { isDirect, assetSrc, fallbackSrc } = resolveListingImagePaths(raw);
         const hotspotsHtml = (item.wearHotspots || [])
           .map(
             (h, i) => `
@@ -3853,27 +4107,31 @@
   function initAdminScreen() {
     renderBackendTables();
 
-    // Tab switching between Mails and Users
-    const tabMails = document.getElementById("btn-tab-backend-mails");
-    const tabUsers = document.getElementById("btn-tab-backend-users");
-    const viewMails = document.getElementById("view-backend-mails");
-    const viewUsers = document.getElementById("view-backend-users");
+    // Tab switching between Mails, Users, and Active Listings
+    const backendTabs = [
+      {
+        btn: document.getElementById("btn-tab-backend-mails"),
+        view: document.getElementById("view-backend-mails"),
+      },
+      {
+        btn: document.getElementById("btn-tab-backend-users"),
+        view: document.getElementById("view-backend-users"),
+      },
+      {
+        btn: document.getElementById("btn-tab-backend-listings"),
+        view: document.getElementById("view-backend-listings"),
+      },
+    ].filter((t) => t.btn && t.view);
 
-    if (tabMails && tabUsers && viewMails && viewUsers) {
-      tabMails.addEventListener("click", () => {
-        tabMails.classList.add("active");
-        tabUsers.classList.remove("active");
-        viewMails.style.display = "block";
-        viewUsers.style.display = "none";
+    backendTabs.forEach((target) => {
+      target.btn.addEventListener("click", () => {
+        backendTabs.forEach((other) => {
+          const isCurrent = other === target;
+          other.btn.classList.toggle("active", isCurrent);
+          other.view.style.display = isCurrent ? "block" : "none";
+        });
       });
-
-      tabUsers.addEventListener("click", () => {
-        tabUsers.classList.add("active");
-        tabMails.classList.remove("active");
-        viewMails.style.display = "none";
-        viewUsers.style.display = "block";
-      });
-    }
+    });
 
     // Quick Test Email button
     const btnPing = document.getElementById("btn-backend-quick-ping");

@@ -2865,6 +2865,55 @@ body[data-role="admin"] .btn-role-switch {
   color: #fecaca;
 }
 
+.snap-auto-boxes-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+}
+
+.auto-scrub-box {
+  position: absolute;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 2px 4px;
+  pointer-events: none;
+}
+
+.auto-scrub-remove-btn {
+  pointer-events: auto;
+  background-color: rgba(15, 23, 42, 0.88);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.auto-scrub-remove-btn:hover {
+  background-color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.scrub-scanning-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #38bdf8;
+}
+
 /* Click-to-Enlarge Product Photo & Lightbox */
 .modal-detail-img-wrap.enlargeable {
   cursor: zoom-in;

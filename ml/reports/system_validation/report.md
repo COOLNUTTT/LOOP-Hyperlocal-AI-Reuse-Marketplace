@@ -18,6 +18,6 @@
 
 ## 2. Throughput & Latency Benchmark
 
-- **p50 Pipeline Latency:** `0.176 ms`
-- **p95 Pipeline Latency:** `0.227 ms` (Target: `< 1000.0 ms`)
-- **Measured CPU Throughput:** `5278.7 pipelines/sec`
+- **p50 Pipeline Latency:** `0.116 ms`
+- **p95 Pipeline Latency:** `0.191 ms` (Target: `< 1000.0 ms`)
+- **Measured CPU Throughput:** `7804.0 pipelines/sec`

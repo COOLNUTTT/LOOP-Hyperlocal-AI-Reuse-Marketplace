@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   User,
@@ -51,10 +51,6 @@ export default function ProfilePage() {
   const [joinCode, setJoinCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
   const getAuthToken = () => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("loop_access_token");
@@ -62,7 +58,7 @@ export default function ProfilePage() {
     return null;
   };
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     const token = getAuthToken();
     if (!token) {
       // Mock local session for initial offline test/preview if not logged in
@@ -107,7 +103,11 @@ export default function ProfilePage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();

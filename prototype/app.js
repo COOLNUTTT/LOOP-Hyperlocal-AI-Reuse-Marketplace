@@ -21,7 +21,8 @@
 
   // Global platform state
   const state = {
-    currentScreen: "overview",
+    currentScreen: "discover",
+    role: "client", // 'client' or 'admin'
     correctionsCount: 42,
     theme: "auto",
 
@@ -75,6 +76,8 @@
 
     // Chat and Handover state
     chat: {
+      activeItemTitle: "Ergonomic Wooden Study Desk with Drawer",
+      sessionsByItem: {},
       messages: [
         {
           sender: "buyer",
@@ -96,6 +99,9 @@
 
     // Swap engine state
     swap: {
+      mode: "3way",
+      targetItemTitle: "LED Study Lamp (~₹1,000)",
+      userOfferTitle: "Casio FX-991EX (~₹1,200)",
       calculated: false,
       confirmed: {
         aarav: false,
@@ -255,6 +261,41 @@
       requestAnimationFrame(() => {
         window.LOOP.refreshSnapCanvas();
       });
+    }
+  }
+
+  function setPortalRole(role) {
+    const normalized = role === "admin" ? "admin" : "client";
+    state.role = normalized;
+    document.body.setAttribute("data-role", normalized);
+    try {
+      sessionStorage.setItem("loop_portal_role", normalized);
+    } catch (_) {}
+
+    const switchBtn = document.getElementById("btn-switch-portal-role");
+    if (switchBtn) {
+      switchBtn.textContent = normalized === "admin" ? "🛒 Client View" : "🛡️ Admin Portal";
+      switchBtn.title =
+        normalized === "admin"
+          ? "Switch to Student Client Portal"
+          : "Switch to Admin & Oversight Portal";
+    }
+
+    const chipBadge = document.getElementById("user-chip-badge");
+    if (chipBadge) {
+      if (normalized === "admin") {
+        chipBadge.className = "verify-badge verified";
+        chipBadge.textContent = "Admin";
+      } else {
+        const sess = getDemoSession();
+        chipBadge.className = sess && sess.verified ? "verify-badge verified" : "verify-badge unverified";
+        chipBadge.textContent = sess && sess.verified ? "Verified" : "Unverified";
+      }
+    }
+
+    const adminScreens = ["admin", "credits", "learning", "simulator", "overview"];
+    if (normalized === "client" && adminScreens.includes(state.currentScreen)) {
+      navigateTo("discover");
     }
   }
 
@@ -1102,36 +1143,49 @@
         drawProceduralItemScene(ctx, cw, ch, state.snap.sampleKey || "desk");
       }
 
-      if (state.snap.scrubbed && scrubBox && photoContainer) {
-        const cW = photoContainer.clientWidth;
-        const cH = photoContainer.clientHeight;
-        let bx, by, bw, bh;
-
-        if (cW > 0 && cH > 0) {
-          const scaleX = cw / cW;
-          const scaleY = ch / cH;
-          bx = Math.round(scrubBox.offsetLeft * scaleX);
-          by = Math.round(scrubBox.offsetTop * scaleY);
-          bw = Math.round(scrubBox.offsetWidth * scaleX);
-          bh = Math.round(scrubBox.offsetHeight * scaleY);
-        } else {
-          // Safe fallback when #screen-snap is hidden (display: none)
-          const leftStr = scrubBox.style.left || "16%";
-          const topStr = scrubBox.style.top || "18%";
-          const widthStr = scrubBox.style.width || "170px";
-          const heightStr = scrubBox.style.height || "120px";
-          bx = leftStr.includes("%") ? Math.round((parseFloat(leftStr) / 100) * cw) : parseInt(leftStr, 10);
-          by = topStr.includes("%") ? Math.round((parseFloat(topStr) / 100) * ch) : parseInt(topStr, 10);
-          bw = Math.round(parseInt(widthStr, 10) * 1.2) || 170;
-          bh = Math.round(parseInt(heightStr, 10) * 1.2) || 120;
+      if (state.snap.scrubbed) {
+        // 1. Always scrub auto-detected PII regions on procedural scenes (Student ID Face & Phone Sticky Note)
+        if (!imgLoaded || !state.snap.uploadedImageUrl) {
+          pixelateRegion(ctx, Math.round(cw * 0.16), Math.round(ch * 0.18), 138, 88, 12);
+          pixelateRegion(ctx, Math.round(cw * 0.18), Math.round(ch * 0.39), 134, 44, 10);
         }
 
-        bx = Math.max(0, Math.min(cw - 16, bx || 0));
-        by = Math.max(0, Math.min(ch - 16, by || 0));
-        bw = Math.max(16, Math.min(cw - bx, bw || 170));
-        bh = Math.max(16, Math.min(ch - by, bh || 120));
+        // 2. Scrub custom draggable scrubber box region
+        if (scrubBox && photoContainer) {
+          const rect = canvas.getBoundingClientRect();
+          const boxRect = scrubBox.getBoundingClientRect();
+          let bx, by, bw, bh;
 
-        pixelateRegion(ctx, bx, by, bw, bh, 14);
+          if (rect.width > 0 && rect.height > 0 && boxRect.width > 0 && boxRect.height > 0) {
+            const scaleX = cw / rect.width;
+            const scaleY = ch / rect.height;
+            bx = Math.round((boxRect.left - rect.left) * scaleX);
+            by = Math.round((boxRect.top - rect.top) * scaleY);
+            bw = Math.round(boxRect.width * scaleX);
+            bh = Math.round(boxRect.height * scaleY);
+          } else {
+            // Safe fallback when #screen-snap is hidden (display: none)
+            const leftStr = scrubBox.style.left || "16%";
+            const topStr = scrubBox.style.top || "18%";
+            const widthStr = scrubBox.style.width || "170px";
+            const heightStr = scrubBox.style.height || "120px";
+            bx = leftStr.includes("%")
+              ? Math.round((parseFloat(leftStr) / 100) * cw)
+              : parseInt(leftStr, 10);
+            by = topStr.includes("%")
+              ? Math.round((parseFloat(topStr) / 100) * ch)
+              : parseInt(topStr, 10);
+            bw = Math.round(parseInt(widthStr, 10) * 1.2) || 170;
+            bh = Math.round(parseInt(heightStr, 10) * 1.2) || 120;
+          }
+
+          bx = Math.max(0, Math.min(cw - 16, bx || 0));
+          by = Math.max(0, Math.min(ch - 16, by || 0));
+          bw = Math.max(16, Math.min(cw - bx, bw || 170));
+          bh = Math.max(16, Math.min(ch - by, bh || 120));
+
+          pixelateRegion(ctx, bx, by, bw, bh, 14);
+        }
       }
     }
 
@@ -1184,7 +1238,7 @@
     baseImg.crossOrigin = "anonymous";
     baseImg.onload = function () {
       imgLoaded = true;
-      renderCanvas();
+      applyScrubberUI();
       if (canvas) {
         const ctx = canvas.getContext("2d");
         if (ctx) measureCanvasQuality(ctx, canvas.width, canvas.height, Boolean(state.snap.uploadedImageUrl));
@@ -1197,14 +1251,19 @@
     renderCanvas();
 
     function applyScrubberUI() {
+      const showAutoBoxes = !imgLoaded || !state.snap.uploadedImageUrl;
       if (state.snap.scrubbed) {
         if (scrubBox) scrubBox.style.display = "flex";
         if (faceBox) {
+          faceBox.style.display = showAutoBoxes ? "flex" : "none";
+          faceBox.classList.remove("exposed");
           faceBox.classList.add("blurred");
           const lbl = faceBox.querySelector(".scrub-label");
-          if (lbl) lbl.textContent = "✓ Face: Blurred";
+          if (lbl) lbl.textContent = "✓ Face / ID: Blurred";
         }
         if (phoneBox) {
+          phoneBox.style.display = showAutoBoxes ? "flex" : "none";
+          phoneBox.classList.remove("exposed");
           phoneBox.classList.add("blurred");
           const lbl = phoneBox.querySelector(".scrub-label");
           if (lbl) lbl.textContent = "✓ Phone: Blurred";
@@ -1217,12 +1276,16 @@
       } else {
         if (scrubBox) scrubBox.style.display = "none";
         if (faceBox) {
+          faceBox.style.display = showAutoBoxes ? "flex" : "none";
           faceBox.classList.remove("blurred");
+          faceBox.classList.add("exposed");
           const lbl = faceBox.querySelector(".scrub-label");
           if (lbl) lbl.textContent = "⚠️ Face: Exposed";
         }
         if (phoneBox) {
+          phoneBox.style.display = showAutoBoxes ? "flex" : "none";
           phoneBox.classList.remove("blurred");
+          phoneBox.classList.add("exposed");
           const lbl = phoneBox.querySelector(".scrub-label");
           if (lbl) lbl.textContent = "⚠️ Phone: Exposed";
         }
@@ -1236,7 +1299,7 @@
       renderCanvas();
     }
 
-    // Draggable box pointer events + Corner resize handle
+    // Draggable box pointer events + Corner resize handle (attached to window so fast dragging never drops)
     if (scrubBox && photoContainer) {
       let isDragging = false;
       let isResizing = false;
@@ -1263,18 +1326,28 @@
       });
 
       const onPointerMove = (e) => {
-        if (!isDragging) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        const maxLeft = Math.max(0, photoContainer.clientWidth - scrubBox.offsetWidth);
-        const maxTop = Math.max(0, photoContainer.clientHeight - scrubBox.offsetHeight);
+        if (isDragging) {
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          const maxLeft = Math.max(0, photoContainer.clientWidth - scrubBox.offsetWidth);
+          const maxTop = Math.max(0, photoContainer.clientHeight - scrubBox.offsetHeight);
 
-        const newLeft = Math.max(0, Math.min(maxLeft, initialLeft + dx));
-        const newTop = Math.max(0, Math.min(maxTop, initialTop + dy));
+          const newLeft = Math.max(0, Math.min(maxLeft, initialLeft + dx));
+          const newTop = Math.max(0, Math.min(maxTop, initialTop + dy));
 
-        scrubBox.style.left = `${newLeft}px`;
-        scrubBox.style.top = `${newTop}px`;
-        renderCanvas();
+          scrubBox.style.left = `${newLeft}px`;
+          scrubBox.style.top = `${newTop}px`;
+          renderCanvas();
+        } else if (isResizing) {
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          const maxW = Math.max(64, photoContainer.clientWidth - scrubBox.offsetLeft);
+          const maxH = Math.max(48, photoContainer.clientHeight - scrubBox.offsetTop);
+
+          scrubBox.style.width = `${Math.max(64, Math.min(maxW, initialWidth + dx))}px`;
+          scrubBox.style.height = `${Math.max(48, Math.min(maxH, initialHeight + dy))}px`;
+          renderCanvas();
+        }
       };
 
       const onPointerUp = (e) => {
@@ -1285,11 +1358,18 @@
           } catch (_) {}
           renderCanvas();
         }
+        if (isResizing) {
+          isResizing = false;
+          try {
+            if (resizeHandle) resizeHandle.releasePointerCapture(e.pointerId);
+          } catch (_) {}
+          renderCanvas();
+        }
       };
 
-      scrubBox.addEventListener("pointermove", onPointerMove);
-      scrubBox.addEventListener("pointerup", onPointerUp);
-      scrubBox.addEventListener("pointercancel", onPointerUp);
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
+      window.addEventListener("pointercancel", onPointerUp);
 
       if (resizeHandle) {
         resizeHandle.addEventListener("pointerdown", (e) => {
@@ -1304,30 +1384,6 @@
           initialWidth = scrubBox.offsetWidth;
           initialHeight = scrubBox.offsetHeight;
         });
-
-        resizeHandle.addEventListener("pointermove", (e) => {
-          if (!isResizing) return;
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
-          const maxW = Math.max(64, photoContainer.clientWidth - scrubBox.offsetLeft);
-          const maxH = Math.max(48, photoContainer.clientHeight - scrubBox.offsetTop);
-
-          scrubBox.style.width = `${Math.max(64, Math.min(maxW, initialWidth + dx))}px`;
-          scrubBox.style.height = `${Math.max(48, Math.min(maxH, initialHeight + dy))}px`;
-          renderCanvas();
-        });
-
-        const stopResize = (e) => {
-          if (isResizing) {
-            isResizing = false;
-            try {
-              resizeHandle.releasePointerCapture(e.pointerId);
-            } catch (_) {}
-            renderCanvas();
-          }
-        };
-        resizeHandle.addEventListener("pointerup", stopResize);
-        resizeHandle.addEventListener("pointercancel", stopResize);
       }
 
       scrubBox.addEventListener("keydown", (e) => {
@@ -1367,6 +1423,17 @@
         applyScrubberUI();
       });
       applyScrubberUI();
+    }
+
+    const burnScrubBtn = document.getElementById("snap-burn-scrub-btn");
+    if (burnScrubBtn) {
+      burnScrubBtn.addEventListener("click", () => {
+        state.snap.scrubbed = true;
+        if (scrubToggle) scrubToggle.checked = true;
+        applyScrubberUI();
+        renderCanvas();
+        showToast("🔒 Pixelation burned into canvas on-device! Sensitive areas are scrubbed.");
+      });
     }
 
     // Heatmap toggle
@@ -2007,96 +2074,88 @@
         }
         displayCards(filtered);
       } else {
-        // Semantic search behavior: understands Hinglish (mez -> furniture, kursi -> gaming chairs, kitab -> textbooks)
+        // Semantic search behavior: ranked multi-field search with Hinglish synonym expansion
+        const HINGLISH_SYNONYMS = {
+          mez: ["desk", "table", "study"],
+          kursi: ["chair", "seating", "gaming"],
+          kitab: ["book", "textbook", "algorithms", "calculus", "tanenbaum", "clrs"],
+          pustak: ["book", "textbook", "algorithms", "calculus", "tanenbaum", "clrs"],
+        };
+        const STOPWORDS = new Set(["for", "and", "the", "with", "in", "on", "of", "a", "an", "to"]);
+
         let mappedConcept = coreQuery;
         let hinglishMatched = false;
         let hinglishTerm = "";
         if (coreQuery.includes("mez")) {
-          mappedConcept = coreQuery.replace("mez", "Study Desk / Furniture");
+          mappedConcept = coreQuery.replace("mez", "Study Desk / Table");
           hinglishMatched = true;
           hinglishTerm = "mez";
         } else if (coreQuery.includes("kursi")) {
-          mappedConcept = coreQuery.replace("kursi", "Ergonomic Chairs / Seating");
+          mappedConcept = coreQuery.replace("kursi", "Ergonomic Chair / Seating");
           hinglishMatched = true;
           hinglishTerm = "kursi";
         } else if (coreQuery.includes("kitab") || coreQuery.includes("pustak")) {
           mappedConcept = coreQuery.replace("kitab", "Textbooks").replace("pustak", "Textbooks");
           hinglishMatched = true;
-          hinglishTerm = "kitab";
+          hinglishTerm = coreQuery.includes("kitab") ? "kitab" : "pustak";
         }
 
-        const filtered = pool.filter((item) => {
-          if (!coreQuery) return true;
-          const itemCat = (item.category || "").toLowerCase();
+        const rawTokens = coreQuery
+          .split(/\s+/)
+          .filter((t) => t && !STOPWORDS.has(t));
 
-          // Concept mappings
-          if (
-            coreQuery.includes("table") ||
-            coreQuery.includes("desk") ||
-            coreQuery.includes("mez")
-          ) {
-            return itemCat === "furniture";
-          }
-          if (coreQuery.includes("kursi") || coreQuery.includes("chair")) {
-            return itemCat === "furniture";
-          }
-          if (
-            coreQuery.includes("kitab") ||
-            coreQuery.includes("pustak") ||
-            coreQuery.includes("book") ||
-            coreQuery.includes("clrs") ||
-            coreQuery.includes("calculus") ||
-            coreQuery.includes("algorithm") ||
-            coreQuery.includes("tanenbaum") ||
-            coreQuery.includes("maths")
-          ) {
-            return itemCat === "books";
-          }
-          if (
-            coreQuery.includes("calc") ||
-            coreQuery.includes("casio") ||
-            coreQuery.includes("laptop") ||
-            coreQuery.includes("headphone") ||
-            coreQuery.includes("audio") ||
-            coreQuery.includes("ti-84")
-          ) {
-            return itemCat === "electronics";
-          }
-          if (
-            coreQuery.includes("cycle") ||
-            coreQuery.includes("bike") ||
-            coreQuery.includes("bat") ||
-            coreQuery.includes("cricket") ||
-            coreQuery.includes("badminton") ||
-            coreQuery.includes("racket") ||
-            coreQuery.includes("guitar") ||
-            coreQuery.includes("drafter") ||
-            coreQuery.includes("lab")
-          ) {
-            return (
-              itemCat.includes("hobbies") ||
-              itemCat.includes("recreation") ||
-              itemCat.includes("sport")
-            );
+        const scored = [];
+        pool.forEach((item, idx) => {
+          if (rawTokens.length === 0) {
+            scored.push({ item, score: 1, idx });
+            return;
           }
 
-          // General semantic match token fallback
-          const tokens = coreQuery.split(/\s+/).filter(Boolean);
-          const searchCorpus = (
-            item.title +
-            " " +
-            (item.subtype || "") +
-            " " +
-            (item.brand || "") +
-            " " +
-            (item.tags || []).join(" ") +
-            " " +
-            (item.description || "") +
-            " " +
-            item.category
-          ).toLowerCase();
-          return tokens.some((t) => searchCorpus.includes(t));
+          const titleLower = (item.title || "").toLowerCase();
+          const brandLower = (item.brand || "").toLowerCase();
+          const subtypeLower = (item.subtype || "").toLowerCase();
+          const catLower = (item.category || "").toLowerCase();
+          const descLower = (item.description || "").toLowerCase();
+          const tagsLower = (item.tags || []).map((tag) => String(tag).toLowerCase()).join(" ");
+          const fullCorpus = `${titleLower} ${brandLower} ${subtypeLower} ${catLower} ${tagsLower} ${descLower}`;
+
+          let score = 0;
+          let matchedTokenCount = 0;
+
+          if (titleLower.includes(coreQuery) || brandLower.includes(coreQuery)) {
+            score += 120;
+          }
+
+          rawTokens.forEach((tok) => {
+            const expanded = HINGLISH_SYNONYMS[tok] ? [tok, ...HINGLISH_SYNONYMS[tok]] : [tok];
+            const stem = tok.length > 4 && tok.endsWith("s") ? tok.slice(0, -1) : tok;
+            if (!expanded.includes(stem)) expanded.push(stem);
+
+            let tokScore = 0;
+            expanded.forEach((term) => {
+              if (titleLower.includes(term)) tokScore = Math.max(tokScore, 50);
+              else if (brandLower.includes(term) || subtypeLower.includes(term)) tokScore = Math.max(tokScore, 40);
+              else if (tagsLower.includes(term) || descLower.includes(term)) tokScore = Math.max(tokScore, 22);
+              else if (catLower.includes(term)) tokScore = Math.max(tokScore, 15);
+            });
+
+            if (tokScore > 0) {
+              matchedTokenCount++;
+              score += tokScore;
+            }
+          });
+
+          // Require at least one strong match, and boost items matching all query tokens
+          if (matchedTokenCount === rawTokens.length) {
+            score += 60;
+          }
+          if (matchedTokenCount > 0 && fullCorpus.length > 0) {
+            scored.push({ item, score, idx });
+          }
         });
+
+        scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
+        const filtered = scored.map((entry) => entry.item);
 
         if (queryExplanation) {
           queryExplanation.innerHTML = `
@@ -2109,7 +2168,7 @@
               }
               Parsed price ceiling constraint: <code>${
                 effectiveCeiling === Infinity
-                  ? "price &le; None"
+                  ? "No price ceiling (All prices)"
                   : "price &le; ₹" + effectiveCeiling.toLocaleString("en-IN")
               }</code>. (Retrieved ${
                 filtered.length
@@ -2167,6 +2226,9 @@
             <span style="position: absolute; top: 8px; right: 8px;" class="fair-badge ${
               item.badgeType
             }">${escapeHtml(item.badge)}</span>
+            <button type="button" class="item-thumb-zoom-btn" data-zoom-id="${escapeHtml(
+              item.id
+            )}" title="Enlarge photo" aria-label="Enlarge photo for ${escapeHtml(item.title)}">🔍 Enlarge</button>
           </div>
           <div class="item-body">
             <div>
@@ -2198,16 +2260,26 @@
         if (!itemObj) return;
 
         card.addEventListener("click", (e) => {
-          if (e.target.closest(".btn-item-msg")) return;
+          if (e.target.closest(".btn-item-msg") || e.target.closest(".item-thumb-zoom-btn")) return;
           openListingDetailModal(itemObj, card);
         });
 
         card.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
-            if (e.target.closest(".btn-item-msg")) return;
+            if (e.target.closest(".btn-item-msg") || e.target.closest(".item-thumb-zoom-btn")) return;
             e.preventDefault();
             openListingDetailModal(itemObj, card);
           }
+        });
+      });
+
+      // Wire enlarge photo button on catalog cards
+      resultsContainer.querySelectorAll(".item-thumb-zoom-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute("data-zoom-id");
+          const itemObj = mockListings.find((m) => m.id === id);
+          if (itemObj) openImageLightbox(itemObj, btn);
         });
       });
 
@@ -2259,6 +2331,14 @@
 
         if (type === "category") {
           state.search.category = val;
+          // Clear default or mismatched search query when switching to a non-furniture category so items show cleanly
+          const qLower = (state.search.query || "").toLowerCase();
+          if (val !== "all" && val !== "furniture" && qLower === "study table under 3000") {
+            state.search.query = "";
+            if (searchInput) searchInput.value = "";
+            const topSearchEl = document.getElementById("top-search-input");
+            if (topSearchEl) topSearchEl.value = "";
+          }
         } else if (type === "price") {
           state.search.priceCeiling = val === "all" ? Infinity : parseInt(val, 10);
         } else if (type === "condition") {
@@ -2533,6 +2613,67 @@
   }
 
   // ==========================================
+  // Image Enlargement Lightbox Modal
+  // ==========================================
+  let lastLightboxTrigger = null;
+
+  function openImageLightbox(item, triggerEl) {
+    const lightbox = document.getElementById("image-lightbox-modal");
+    const caption = document.getElementById("lightbox-caption");
+    const mediaBox = document.getElementById("lightbox-media-container");
+    if (!lightbox || !mediaBox || !item) return;
+
+    lastLightboxTrigger = triggerEl || document.activeElement;
+    if (caption) {
+      caption.textContent = `${item.title} — ₹${(item.price || 0).toLocaleString("en-IN")}`;
+    }
+
+    if (item.images && item.images.length > 0) {
+      const raw = item.images[0];
+      const isDirect =
+        typeof raw === "string" &&
+        (raw.startsWith("data:image/") || raw.startsWith("http") || raw.startsWith("blob:"));
+      const fileName = !isDirect && raw.includes("/") ? raw.split("/").pop() : raw;
+      const assetSrc = isDirect ? raw : "assets/images/" + fileName;
+      const fallbackSrc = isDirect ? raw : "images/" + fileName;
+      const onerrorAttr = isDirect
+        ? `this.onerror=null;this.parentElement.innerHTML=window.LOOP.renderNeutralPendingTile('${escapeHtml(
+            item.category || ""
+          )}', true);`
+        : `if(this.src.indexOf('assets/images/') !== -1){this.src='${fallbackSrc}';}else{this.onerror=null;this.parentElement.innerHTML=window.LOOP.renderNeutralPendingTile('${escapeHtml(
+            item.category || ""
+          )}', true);}`;
+      mediaBox.innerHTML = `
+        <img src="${assetSrc}" alt="${escapeHtml(item.title)}" class="lightbox-img" onerror="${onerrorAttr}">
+        <div class="lightbox-meta-bar">
+          Condition: <strong>${escapeHtml(item.condition || "Good")}</strong> &bull;
+          Category: <strong>${escapeHtml(item.category || "General")}</strong> &bull;
+          Seller: <strong>${escapeHtml(item.sellerAlias || "Campus Trader")}</strong>
+        </div>
+      `;
+    } else {
+      mediaBox.innerHTML = `
+        <div style="width: 100%; max-width: 460px;">${window.LOOP.renderNeutralPendingTile(item.category, true)}</div>
+        <div class="lightbox-meta-bar">${escapeHtml(item.title)} &bull; Photo pending</div>
+      `;
+    }
+
+    lightbox.classList.remove("hidden");
+    const closeBtn = document.getElementById("btn-close-lightbox");
+    if (closeBtn) closeBtn.focus();
+  }
+
+  function closeImageLightbox() {
+    const lightbox = document.getElementById("image-lightbox-modal");
+    if (lightbox && !lightbox.classList.contains("hidden")) {
+      lightbox.classList.add("hidden");
+      if (lastLightboxTrigger && typeof lastLightboxTrigger.focus === "function") {
+        lastLightboxTrigger.focus();
+      }
+    }
+  }
+
+  // ==========================================
   // Listing Detail Modal: AI Price Range & Reasons
   // ==========================================
   let activeDetailItem = null;
@@ -2578,18 +2719,35 @@
               item.category || ""
             )}', true);}`;
         photoEl.innerHTML = `
-          <div class="modal-detail-img-wrap" style="aspect-ratio: 16/10; width: 100%; position: relative; overflow: hidden; background-color: var(--color-bg); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md);">
+          <div class="modal-detail-img-wrap enlargeable" role="button" tabindex="0" aria-label="Click to enlarge photo for ${escapeHtml(
+            item.title
+          )}" style="aspect-ratio: 16/10; width: 100%; position: relative; overflow: hidden; background-color: var(--color-bg); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md);">
             <img src="${assetSrc}" alt="${escapeHtml(
               item.title
             )}" class="modal-detail-img" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;" onerror="${onerrorAttr}">
             ${hotspotsHtml}
+            <span class="photo-enlarge-badge">🔍 Click to Enlarge</span>
           </div>
         `;
       } else {
-        photoEl.innerHTML = `<div class="modal-detail-img-wrap" style="width: 100%;">${window.LOOP.renderNeutralPendingTile(
+        photoEl.innerHTML = `<div class="modal-detail-img-wrap enlargeable" role="button" tabindex="0" aria-label="Click to enlarge photo" style="width: 100%;">${window.LOOP.renderNeutralPendingTile(
           item.category,
           true
-        )}</div>`;
+        )}<span class="photo-enlarge-badge">🔍 Click to Enlarge</span></div>`;
+      }
+
+      const wrap = photoEl.querySelector(".modal-detail-img-wrap");
+      if (wrap) {
+        wrap.addEventListener("click", (e) => {
+          if (e.target.closest(".wear-hotspot-pin")) return;
+          openImageLightbox(item, wrap);
+        });
+        wrap.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openImageLightbox(item, wrap);
+          }
+        });
       }
     }
 
@@ -2772,16 +2930,38 @@
     if (swapBtn) {
       swapBtn.addEventListener("click", () => {
         if (activeDetailItem) {
-          const title = activeDetailItem.title;
+          const itemCopy = { ...activeDetailItem };
           closeListingDetailModal();
           navigateTo("swap");
-          showToast(`Swap Engine active: Target item set to "${title}"`);
+          if (window.LOOP && typeof window.LOOP.setSwapTargetItem === "function") {
+            window.LOOP.setSwapTargetItem(itemCopy);
+          } else {
+            showToast(`Swap Engine active: Target item set to "${itemCopy.title}"`);
+          }
         }
+      });
+    }
+
+    // Lightbox modal events
+    const lightboxModal = document.getElementById("image-lightbox-modal");
+    const closeLightboxBtn = document.getElementById("btn-close-lightbox");
+    if (closeLightboxBtn) {
+      closeLightboxBtn.addEventListener("click", closeImageLightbox);
+    }
+    if (lightboxModal) {
+      lightboxModal.addEventListener("click", (e) => {
+        if (e.target === lightboxModal) closeImageLightbox();
       });
     }
 
     // Modal trap focus and escape key
     document.addEventListener("keydown", (e) => {
+      if (lightboxModal && !lightboxModal.classList.contains("hidden") && e.key === "Escape") {
+        e.preventDefault();
+        closeImageLightbox();
+        return;
+      }
+
       if (!modal || modal.classList.contains("hidden")) return;
 
       if (e.key === "Escape") {
@@ -2984,6 +3164,16 @@
     }
 
     // Handover dual confirmation
+    function persistChatSession() {
+      const key = state.chat.activeItemTitle || "default";
+      state.chat.sessionsByItem[key] = {
+        buyerConfirmed: state.chat.buyerConfirmed,
+        sellerConfirmed: state.chat.sellerConfirmed,
+        handoverCompleted: state.chat.handoverCompleted,
+        reviewSubmitted: state.chat.reviewSubmitted,
+      };
+    }
+
     function updateHandoverState() {
       const buyer = state.chat.buyerConfirmed;
       const seller = state.chat.sellerConfirmed;
@@ -3005,6 +3195,7 @@
           "Waiting for both parties to confirm at meetup (0/2 confirmed)";
         handoverStatusText.style.color = "var(--color-text-muted)";
       }
+      persistChatSession();
     }
 
     if (buyerConfirmBtn) {
@@ -3083,32 +3274,90 @@
   // ==========================================
   function initSwapScreen() {
     const solveBtn = document.getElementById("swap-solve-btn");
+    const resetBtn = document.getElementById("swap-reset-btn");
+    const mode3WayBtn = document.getElementById("swap-mode-3way");
+    const mode2WayBtn = document.getElementById("swap-mode-2way");
+    const offerSelect = document.getElementById("swap-user-offer-select");
+    const userAHavesEl = document.getElementById("swap-user-a-haves");
+    const userAWantsEl = document.getElementById("swap-user-a-wants");
+    const targetBannerEl = document.getElementById("swap-target-item-banner");
     const diagramBox = document.getElementById("swap-diagram-container");
     const swapStatusBadge = document.getElementById("swap-status-badge");
     const confirmBtnA = document.getElementById("swap-confirm-btn-a");
     const confirmBtnB = document.getElementById("swap-confirm-btn-b");
     const confirmBtnC = document.getElementById("swap-confirm-btn-c");
 
+    function shortLabel(str, maxLen = 18) {
+      if (!str) return "";
+      const clean = String(str).replace(/\s*\(~?₹[^)]+\)\s*/g, "").trim();
+      return clean.length > maxLen ? clean.slice(0, maxLen - 1) + "…" : clean;
+    }
+
     function checkAllConfirmed() {
       const { aarav, priya, rohan } = state.swap.confirmed;
-      const count = (aarav ? 1 : 0) + (priya ? 1 : 0) + (rohan ? 1 : 0);
+      const is2Way = state.swap.mode === "2way";
+      const required = is2Way ? 2 : 3;
+      const count = is2Way
+        ? (aarav ? 1 : 0) + (priya ? 1 : 0)
+        : (aarav ? 1 : 0) + (priya ? 1 : 0) + (rohan ? 1 : 0);
 
-      if (count === 3) {
+      if (count >= required) {
         swapStatusBadge.className = "fair-badge great";
-        swapStatusBadge.innerHTML = "🎉 3-Party Swap Confirmed & Locked (3/3 Confirmed)";
-        showToast("All 3 parties confirmed! Handover schedules created for Library Gate.");
+        swapStatusBadge.innerHTML = is2Way
+          ? "🎉 2-Party Direct Swap Confirmed & Locked (2/2 Confirmed)"
+          : "🎉 3-Party Swap Confirmed & Locked (3/3 Confirmed)";
+        showToast(
+          is2Way
+            ? "Both parties confirmed! Direct swap schedule created for Library Gate."
+            : "All 3 parties confirmed! Handover schedules created for Library Gate."
+        );
       } else if (count > 0) {
         swapStatusBadge.className = "fair-badge fair";
-        swapStatusBadge.innerHTML = `⏳ Swap Pending (${count}/3 Confirmed)`;
+        swapStatusBadge.innerHTML = `⏳ Swap Pending (${count}/${required} Confirmed)`;
       } else {
         swapStatusBadge.className = "fair-badge fair";
-        swapStatusBadge.innerHTML = "Ready to confirm (0/3)";
+        swapStatusBadge.innerHTML = `Ready to confirm (0/${required})`;
       }
     }
 
-    if (solveBtn) {
-      solveBtn.addEventListener("click", () => {
-        state.swap.calculated = true;
+    function solveSwapCycle(silent = false) {
+      state.swap.calculated = true;
+      const offerShort = shortLabel(state.swap.userOfferTitle);
+      const wantShort = shortLabel(state.swap.targetItemTitle);
+      const is2Way = state.swap.mode === "2way";
+
+      if (is2Way) {
+        diagramBox.innerHTML = `
+          <svg viewBox="0 0 540 240" width="100%" height="100%" style="display:block;">
+            <defs>
+              <marker id="arrow2" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+              </marker>
+            </defs>
+            <path d="M 185 95 Q 270 55 355 95" fill="none" stroke="#059669" stroke-width="3" marker-end="url(#arrow2)"/>
+            <path d="M 355 145 Q 270 185 185 145" fill="none" stroke="#059669" stroke-width="3" marker-end="url(#arrow2)"/>
+            <g transform="translate(135, 120)">
+              <circle cx="0" cy="0" r="46" fill="var(--color-surface)" stroke="#059669" stroke-width="3"/>
+              <text x="0" y="-12" text-anchor="middle" font-size="11" font-weight="700" fill="var(--color-text)">User A: Aarav (You)</text>
+              <text x="0" y="5" text-anchor="middle" font-size="9" fill="var(--color-text-muted)">Gives: ${escapeHtml(offerShort)}</text>
+              <text x="0" y="19" text-anchor="middle" font-size="9" fill="#059669" font-weight="600">Gets: ${escapeHtml(wantShort)}</text>
+            </g>
+            <g transform="translate(405, 120)">
+              <circle cx="0" cy="0" r="46" fill="var(--color-surface)" stroke="#059669" stroke-width="3"/>
+              <text x="0" y="-12" text-anchor="middle" font-size="11" font-weight="700" fill="var(--color-text)">User B: Priya</text>
+              <text x="0" y="5" text-anchor="middle" font-size="9" fill="var(--color-text-muted)">Gives: ${escapeHtml(wantShort)}</text>
+              <text x="0" y="19" text-anchor="middle" font-size="9" fill="#059669" font-weight="600">Gets: ${escapeHtml(offerShort)}</text>
+            </g>
+            <g transform="translate(270, 120)">
+              <rect x="-70" y="-14" width="140" height="28" rx="14" fill="#059669"/>
+              <text x="0" y="4" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">2-Way Direct (8ms)</text>
+            </g>
+          </svg>
+        `;
+        if (!silent) {
+          showToast("✓ Solved optimal 2-party direct swap! Zero cash needed.");
+        }
+      } else {
         diagramBox.innerHTML = `
           <svg viewBox="0 0 540 280" width="100%" height="100%" style="display:block;">
             <defs>
@@ -3121,35 +3370,32 @@
             <circle cx="270" cy="140" r="95" fill="none" stroke="var(--color-primary-border)" stroke-width="2" stroke-dasharray="6,4"/>
 
             <!-- Connecting directional arrows -->
-            <!-- A -> B -->
             <path d="M 230 65 Q 340 75 365 140" fill="none" stroke="#059669" stroke-width="3" marker-end="url(#arrow)"/>
-            <!-- B -> C -->
             <path d="M 365 185 Q 285 245 190 215" fill="none" stroke="#059669" stroke-width="3" marker-end="url(#arrow)"/>
-            <!-- C -> A -->
             <path d="M 160 170 Q 155 100 230 65" fill="none" stroke="#059669" stroke-width="3" marker-end="url(#arrow)"/>
 
             <!-- Node A: Aarav (Top) -->
             <g transform="translate(270, 50)">
-              <circle cx="0" cy="0" r="34" fill="var(--color-surface)" stroke="#059669" stroke-width="3"/>
-              <text x="0" y="-8" text-anchor="middle" font-size="11" font-weight="700" fill="var(--color-text)">User A: Aarav</text>
-              <text x="0" y="8" text-anchor="middle" font-size="9" fill="var(--color-text-muted)">Gives: Calculator</text>
-              <text x="0" y="20" text-anchor="middle" font-size="9" fill="#059669" font-weight="600">Gets: Lamp</text>
+              <circle cx="0" cy="0" r="36" fill="var(--color-surface)" stroke="#059669" stroke-width="3"/>
+              <text x="0" y="-8" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--color-text)">User A: Aarav</text>
+              <text x="0" y="8" text-anchor="middle" font-size="8.5" fill="var(--color-text-muted)">Gives: ${escapeHtml(offerShort)}</text>
+              <text x="0" y="20" text-anchor="middle" font-size="8.5" fill="#059669" font-weight="600">Gets: ${escapeHtml(wantShort)}</text>
             </g>
 
             <!-- Node B: Priya (Right) -->
             <g transform="translate(390, 175)">
-              <circle cx="0" cy="0" r="34" fill="var(--color-surface)" stroke="#059669" stroke-width="3"/>
-              <text x="0" y="-8" text-anchor="middle" font-size="11" font-weight="700" fill="var(--color-text)">User B: Priya</text>
-              <text x="0" y="8" text-anchor="middle" font-size="9" fill="var(--color-text-muted)">Gives: Desk Lamp</text>
-              <text x="0" y="20" text-anchor="middle" font-size="9" fill="#059669" font-weight="600">Gets: CLRS Book</text>
+              <circle cx="0" cy="0" r="36" fill="var(--color-surface)" stroke="#059669" stroke-width="3"/>
+              <text x="0" y="-8" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--color-text)">User B: Priya</text>
+              <text x="0" y="8" text-anchor="middle" font-size="8.5" fill="var(--color-text-muted)">Gives: ${escapeHtml(wantShort)}</text>
+              <text x="0" y="20" text-anchor="middle" font-size="8.5" fill="#059669" font-weight="600">Gets: CLRS Book</text>
             </g>
 
             <!-- Node C: Rohan (Left) -->
             <g transform="translate(150, 175)">
-              <circle cx="0" cy="0" r="34" fill="var(--color-surface)" stroke="#059669" stroke-width="3"/>
-              <text x="0" y="-8" text-anchor="middle" font-size="11" font-weight="700" fill="var(--color-text)">User C: Rohan</text>
-              <text x="0" y="8" text-anchor="middle" font-size="9" fill="var(--color-text-muted)">Gives: CLRS Book</text>
-              <text x="0" y="20" text-anchor="middle" font-size="9" fill="#059669" font-weight="600">Gets: Calculator</text>
+              <circle cx="0" cy="0" r="36" fill="var(--color-surface)" stroke="#059669" stroke-width="3"/>
+              <text x="0" y="-8" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--color-text)">User C: Rohan</text>
+              <text x="0" y="8" text-anchor="middle" font-size="8.5" fill="var(--color-text-muted)">Gives: CLRS Book</text>
+              <text x="0" y="20" text-anchor="middle" font-size="8.5" fill="#059669" font-weight="600">Gets: ${escapeHtml(offerShort)}</text>
             </g>
 
             <!-- Center Solution Badge -->
@@ -3159,14 +3405,82 @@
             </g>
           </svg>
         `;
-        showToast(
-          "✓ Solved optimal 3-party swap cycle! Value disparity: ₹150 (within 15% tolerance threshold)."
-        );
+        if (!silent) {
+          showToast(
+            "✓ Solved optimal 3-party swap cycle! Value disparity within 15% tolerance threshold."
+          );
+        }
+      }
+      checkAllConfirmed();
+    }
+
+    function resetSwapState(silent = false) {
+      state.swap.calculated = false;
+      state.swap.confirmed = { aarav: false, priya: false, rohan: false };
+      if (confirmBtnA) {
+        confirmBtnA.disabled = false;
+        confirmBtnA.textContent = "Confirm Trade (Aarav)";
+      }
+      if (confirmBtnB) {
+        confirmBtnB.disabled = false;
+        confirmBtnB.textContent = "Confirm Trade (Priya)";
+      }
+      if (confirmBtnC) {
+        confirmBtnC.disabled = false;
+        confirmBtnC.textContent = "Confirm Trade (Rohan)";
+      }
+      if (diagramBox) {
+        diagramBox.innerHTML = `
+          <div style="text-align: center; color: var(--color-text-muted); padding: 20px;">
+            <p style="font-weight: 600;">Click "Find Exchange Cycles" above to solve candidate cycles via CP-SAT.</p>
+          </div>
+        `;
+      }
+      if (swapStatusBadge) {
+        swapStatusBadge.className = "fair-badge fair";
+        swapStatusBadge.innerHTML = "Ready to solve";
+      }
+      if (!silent) showToast("Swap cycle reset.");
+    }
+
+    if (solveBtn) {
+      solveBtn.addEventListener("click", () => solveSwapCycle(false));
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => resetSwapState(false));
+    }
+
+    if (offerSelect) {
+      offerSelect.addEventListener("change", (e) => {
+        state.swap.userOfferTitle = e.target.value;
+        if (userAHavesEl) userAHavesEl.textContent = e.target.value;
+        if (state.swap.calculated) solveSwapCycle(true);
+      });
+    }
+
+    if (mode3WayBtn && mode2WayBtn) {
+      mode3WayBtn.addEventListener("click", () => {
+        state.swap.mode = "3way";
+        mode3WayBtn.classList.add("active");
+        mode2WayBtn.classList.remove("active");
+        if (confirmBtnC) confirmBtnC.closest("div").style.display = "block";
+        if (state.swap.calculated) solveSwapCycle(false);
+        else checkAllConfirmed();
+      });
+      mode2WayBtn.addEventListener("click", () => {
+        state.swap.mode = "2way";
+        mode2WayBtn.classList.add("active");
+        mode3WayBtn.classList.remove("active");
+        if (confirmBtnC) confirmBtnC.closest("div").style.display = "none";
+        if (state.swap.calculated) solveSwapCycle(false);
+        else checkAllConfirmed();
       });
     }
 
     if (confirmBtnA) {
       confirmBtnA.addEventListener("click", () => {
+        if (!state.swap.calculated) solveSwapCycle(true);
         state.swap.confirmed.aarav = true;
         confirmBtnA.textContent = "✓ Aarav Confirmed";
         confirmBtnA.disabled = true;
@@ -3176,6 +3490,7 @@
 
     if (confirmBtnB) {
       confirmBtnB.addEventListener("click", () => {
+        if (!state.swap.calculated) solveSwapCycle(true);
         state.swap.confirmed.priya = true;
         confirmBtnB.textContent = "✓ Priya Confirmed";
         confirmBtnB.disabled = true;
@@ -3185,12 +3500,25 @@
 
     if (confirmBtnC) {
       confirmBtnC.addEventListener("click", () => {
+        if (!state.swap.calculated) solveSwapCycle(true);
         state.swap.confirmed.rohan = true;
         confirmBtnC.textContent = "✓ Rohan Confirmed";
         confirmBtnC.disabled = true;
         checkAllConfirmed();
       });
     }
+
+    window.LOOP = window.LOOP || {};
+    window.LOOP.setSwapTargetItem = function (item) {
+      if (!item) return;
+      const targetStr = `${item.title} (~₹${(item.price || 0).toLocaleString("en-IN")})`;
+      state.swap.targetItemTitle = targetStr;
+      if (targetBannerEl) targetBannerEl.textContent = `🎯 Target Want: ${targetStr}`;
+      if (userAWantsEl) userAWantsEl.textContent = targetStr;
+      resetSwapState(true);
+      solveSwapCycle(true);
+      showToast(`Swap Engine configured for "${item.title}"`);
+    };
   }
 
   // ==========================================
@@ -3279,14 +3607,26 @@
       }
     }
 
+    function updatePendingFlagsBadge() {
+      const badge = document.getElementById("admin-pending-flags-badge");
+      if (!badge) return;
+      const pending = Array.from(document.querySelectorAll(".mod-flag-card")).filter(
+        (c) => c.getAttribute("data-resolved") !== "true"
+      ).length;
+      badge.textContent = pending === 0 ? "0 Pending (All Clear)" : `${pending} Pending`;
+      badge.className = pending === 0 ? "fair-badge great" : "fair-badge overpriced";
+    }
+
     document.querySelectorAll(".mod-action-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const flagCard = btn.closest(".mod-flag-card");
         const flagId = flagCard.getAttribute("data-flag-id");
         const action = btn.getAttribute("data-action");
+        flagCard.setAttribute("data-resolved", "true");
         flagCard.style.opacity = "0.5";
         flagCard.style.pointerEvents = "none";
 
+        updatePendingFlagsBadge();
         appendAuditRow(action, flagId, `Moderator clicked ${action}`);
         showToast(`Moderation: ${flagId} marked as ${action} (Audit log updated)`);
       });
@@ -3449,7 +3789,18 @@
       applyDropBtn.addEventListener("click", () => {
         if (applyDropBtn._targetPrice) {
           state.simulator.currentAsk = applyDropBtn._targetPrice;
-          showToast(`✓ Price drop applied: Asking price updated to ₹${state.simulator.currentAsk}`);
+          state.snap.price = applyDropBtn._targetPrice;
+          const snapSlider = document.getElementById("snap-price-slider");
+          const snapDisplay = document.getElementById("snap-price-display");
+          if (snapSlider) {
+            snapSlider.value = String(applyDropBtn._targetPrice);
+            snapSlider.dispatchEvent(new Event("input"));
+          } else if (snapDisplay) {
+            snapDisplay.textContent = `₹${applyDropBtn._targetPrice.toLocaleString("en-IN")}`;
+          }
+          showToast(
+            `✓ Price drop applied: Asking price updated to ₹${state.simulator.currentAsk} (synced with Snap-to-List)`
+          );
           updatePriceDropLogic();
         }
       });
@@ -3579,6 +3930,7 @@
   const authFlow = {
     mode: "signin", // 'signin' or 'create'
     activeTab: "email", // 'email' or 'phone'
+    selectedRole: "client", // 'client' or 'admin'
     pendingIdentifier: null,
     pendingVerified: false,
     otpCode: "482916",
@@ -3596,6 +3948,7 @@
           authenticated: true,
           identifier: "a***@adypu.edu.in",
           verified: true,
+          role: "client",
         };
         sessionStorage.setItem("loop_demo_session", JSON.stringify(defaultSession));
         return defaultSession;
@@ -3606,6 +3959,7 @@
         authenticated: true,
         identifier: "a***@adypu.edu.in",
         verified: true,
+        role: "client",
       };
     }
   }
@@ -3841,8 +4195,17 @@
     }
 
     // 4. Reset Swap Screen
+    state.swap.mode = "3way";
+    state.swap.targetItemTitle = "LED Study Lamp (~₹1,000)";
+    state.swap.userOfferTitle = "Casio FX-991EX (~₹1,200)";
     state.swap.calculated = false;
     state.swap.confirmed = { aarav: false, priya: false, rohan: false };
+    const sTargetBanner = document.getElementById("swap-target-item-banner");
+    if (sTargetBanner) sTargetBanner.textContent = "🎯 Target Want: LED Study Lamp (~₹1,000)";
+    const sUserAWants = document.getElementById("swap-user-a-wants");
+    if (sUserAWants) sUserAWants.textContent = "LED Study Lamp (~₹1,000)";
+    const sUserAHaves = document.getElementById("swap-user-a-haves");
+    if (sUserAHaves) sUserAHaves.textContent = "Casio FX-991EX (~₹1,200)";
 
     const swapDiagram = document.getElementById("swap-diagram-container");
     if (swapDiagram) {
@@ -3885,9 +4248,15 @@
     if (vt) vt.dispatchEvent(new Event("change"));
 
     document.querySelectorAll(".mod-flag-card").forEach((card) => {
+      card.removeAttribute("data-resolved");
       card.style.opacity = "1";
       card.style.pointerEvents = "auto";
     });
+    const pendingBadge = document.getElementById("admin-pending-flags-badge");
+    if (pendingBadge) {
+      pendingBadge.textContent = "3 Pending";
+      pendingBadge.className = "fair-badge overpriced";
+    }
 
     // 6. Reset Active Learning
     state.learning.activeModel.version = "v1.1.0";
@@ -4417,13 +4786,52 @@
           authenticated: true,
           identifier: authFlow.pendingIdentifier || "user@adypu.edu.in",
           verified: !!authFlow.pendingVerified,
+          role: authFlow.selectedRole || "client",
         };
 
         setDemoSession(session);
+        setPortalRole(session.role);
         updateDashboardUserChip(session);
         setAuthGateVisible(false);
-        navigateTo("discover");
-        showToast(`Welcome to LOOP, ${session.identifier}!`);
+        navigateTo(session.role === "admin" ? "admin" : "discover");
+        showToast(`Welcome to LOOP (${session.role === "admin" ? "Admin Portal" : "Student Client"}), ${session.identifier}!`);
+      });
+    }
+
+    // Auth Portal Role Pills (Student Client vs Admin Portal)
+    const authRoleClientBtn = document.getElementById("auth-role-client");
+    const authRoleAdminBtn = document.getElementById("auth-role-admin");
+    if (authRoleClientBtn && authRoleAdminBtn) {
+      authRoleClientBtn.addEventListener("click", () => {
+        authFlow.selectedRole = "client";
+        authRoleClientBtn.classList.add("active");
+        authRoleAdminBtn.classList.remove("active");
+      });
+      authRoleAdminBtn.addEventListener("click", () => {
+        authFlow.selectedRole = "admin";
+        authRoleAdminBtn.classList.add("active");
+        authRoleClientBtn.classList.remove("active");
+      });
+    }
+
+    // Header Quick Portal Role Switcher (Client <-> Admin)
+    const switchRoleBtn = document.getElementById("btn-switch-portal-role");
+    if (switchRoleBtn) {
+      switchRoleBtn.addEventListener("click", () => {
+        const nextRole = state.role === "admin" ? "client" : "admin";
+        setPortalRole(nextRole);
+        const sess = getDemoSession();
+        if (sess) {
+          sess.role = nextRole;
+          setDemoSession(sess);
+        }
+        if (nextRole === "admin") {
+          navigateTo("admin");
+          showToast("Switched to Admin & Oversight Portal");
+        } else {
+          navigateTo("discover");
+          showToast("Switched to Student Client Portal");
+        }
       });
     }
 
@@ -4432,6 +4840,7 @@
     if (btnSignOut) {
       btnSignOut.addEventListener("click", () => {
         clearDemoSession();
+        setPortalRole("client");
         resetPlatformState();
         resetAuthForms();
         setAuthGateVisible(true);
@@ -4442,9 +4851,11 @@
     // Check existing demo session
     const existing = getDemoSession();
     if (existing && existing.authenticated) {
+      setPortalRole(existing.role || "client");
       updateDashboardUserChip(existing);
       setAuthGateVisible(false);
     } else {
+      setPortalRole("client");
       setAuthGateVisible(true);
     }
   }
@@ -4478,9 +4889,51 @@
     },
     openChatWithItem: function (itemTitle, itemPrice) {
       navigateTo("chat");
+      state.chat.activeItemTitle = itemTitle;
+      const saved = state.chat.sessionsByItem[itemTitle] || {
+        buyerConfirmed: false,
+        sellerConfirmed: false,
+        handoverCompleted: false,
+        reviewSubmitted: false,
+      };
+      state.chat.buyerConfirmed = saved.buyerConfirmed;
+      state.chat.sellerConfirmed = saved.sellerConfirmed;
+      state.chat.handoverCompleted = saved.handoverCompleted;
+      state.chat.reviewSubmitted = saved.reviewSubmitted;
+
       const headerItem = document.getElementById("chat-listing-title");
       if (headerItem)
         headerItem.textContent = `${itemTitle} (₹${itemPrice.toLocaleString("en-IN")})`;
+
+      const bConfirm = document.getElementById("handover-buyer-confirm-btn");
+      const sConfirm = document.getElementById("handover-seller-confirm-btn");
+      const handoverText = document.getElementById("handover-status-text");
+      const revCard = document.getElementById("handover-review-card");
+      if (bConfirm) {
+        bConfirm.disabled = saved.buyerConfirmed;
+        bConfirm.textContent = saved.buyerConfirmed
+          ? "✓ Buyer Confirmed Item Received"
+          : "Buyer Confirm Item Received";
+        bConfirm.className = saved.buyerConfirmed ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
+      }
+      if (sConfirm) {
+        sConfirm.disabled = saved.sellerConfirmed;
+        sConfirm.textContent = saved.sellerConfirmed
+          ? "✓ Seller Confirmed Handover"
+          : "Seller Confirm Handover";
+        sConfirm.className = saved.sellerConfirmed ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
+      }
+      if (handoverText) {
+        if (saved.handoverCompleted) {
+          handoverText.innerHTML = "<strong>✅ Handover Verified & Completed! (2/2 Confirmed)</strong>";
+          handoverText.style.color = "var(--color-success)";
+        } else {
+          handoverText.innerHTML = "Waiting for both parties to confirm at meetup (0/2 confirmed)";
+          handoverText.style.color = "var(--color-text-muted)";
+        }
+      }
+      if (revCard) revCard.style.display = saved.handoverCompleted ? "block" : "none";
+
       showToast(`Switched to active chat context for: ${itemTitle}`);
     },
   });

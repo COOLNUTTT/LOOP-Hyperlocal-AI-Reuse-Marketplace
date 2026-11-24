@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Emmanuel George P and Sameer Makani. All rights reserved.
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   ShieldCheck,
   Plus,
@@ -52,11 +52,7 @@ export const InteractiveScrubberPreview: React.FC<ScrubberPreviewProps> = ({
   } | null>(null);
   const [isPixelated, setIsPixelated] = useState(false);
 
-  useEffect(() => {
-    loadImage();
-  }, [imageSrc]);
-
-  const loadImage = () => {
+  const loadImage = useCallback(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
@@ -81,7 +77,11 @@ export const InteractiveScrubberPreview: React.FC<ScrubberPreviewProps> = ({
       });
     };
     img.src = imageSrc;
-  };
+  }, [imageSrc]);
+
+  useEffect(() => {
+    loadImage();
+  }, [loadImage]);
 
   const handleAddBox = () => {
     const newBox: BoundingBox = {

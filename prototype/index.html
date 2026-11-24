@@ -51,6 +51,26 @@
             nothing is sent or stored.
           </div>
 
+          <!-- Portal Role Selector -->
+          <div class="auth-role-pills" role="group" aria-label="Select Portal Mode">
+            <button
+              type="button"
+              class="auth-role-pill active"
+              id="auth-role-client"
+              data-auth-role="client"
+            >
+              🛒 Student Client
+            </button>
+            <button
+              type="button"
+              class="auth-role-pill"
+              id="auth-role-admin"
+              data-auth-role="admin"
+            >
+              🛡️ Admin Portal
+            </button>
+          </div>
+
           <!-- Accessible Tabs with ARIA and Arrow-Key Navigation -->
           <div class="auth-tablist" role="tablist" aria-label="Authentication Method">
             <button
@@ -585,6 +605,15 @@
 
             <button
               type="button"
+              class="btn-role-switch"
+              id="btn-switch-portal-role"
+              title="Switch between Student Client Portal and Admin Portal"
+            >
+              🛡️ Admin Portal
+            </button>
+
+            <button
+              type="button"
               class="btn-signout"
               id="btn-sign-out"
               title="Sign out of demo session"
@@ -594,7 +623,7 @@
 
             <button
               type="button"
-              class="btn btn-secondary btn-sm"
+              class="btn btn-secondary btn-sm admin-only-ui"
               id="header-backend-btn"
               title="Inspect Backend Datastore & Transactional Mail Outbox"
               style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600"
@@ -606,7 +635,7 @@
             </button>
 
             <button
-              class="btn-corrections"
+              class="btn-corrections admin-only-ui"
               id="header-corrections-btn"
               title="View Active Learning corrections buffer"
             >
@@ -731,8 +760,8 @@
               <span class="phase-tag">Cycles</span>
             </button>
 
-            <!-- Group 3: Safety -->
-            <div class="nav-group-title">Safety</div>
+            <!-- Group 3: Safety & Impact -->
+            <div class="nav-group-title">Safety &amp; Impact</div>
             <button class="nav-item" data-screen="trust">
               <svg
                 viewBox="0 0 24 24"
@@ -746,59 +775,6 @@
               </svg>
               <span>Trust &amp; Safety</span>
               <span class="phase-tag">Shield</span>
-            </button>
-
-            <!-- Group 4: Research -->
-            <div class="nav-group-title">Research</div>
-            <button class="nav-item" data-screen="overview">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-              </svg>
-              <span>Overview</span>
-              <span class="phase-tag">KPIs</span>
-            </button>
-
-            <button class="nav-item" data-screen="learning">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-              </svg>
-              <span>Active Learning</span>
-              <span class="phase-tag">Active</span>
-            </button>
-
-            <button class="nav-item" data-screen="simulator">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="18" y1="20" x2="18" y2="10" />
-                <line x1="12" y1="20" x2="12" y2="4" />
-                <line x1="6" y1="20" x2="6" y2="14" />
-              </svg>
-              <span>Simulator &amp; Drop</span>
-              <span class="phase-tag">Dynamic</span>
             </button>
 
             <button class="nav-item" data-screen="impact">
@@ -819,7 +795,60 @@
               <span class="phase-tag">LCA CO₂</span>
             </button>
 
-            <button class="nav-item" data-screen="admin">
+            <!-- Group 4: Admin & Oversight (Admin Portal Only) -->
+            <div class="nav-group-title admin-only-ui">Admin &amp; Oversight</div>
+            <button class="nav-item admin-only-ui" data-screen="overview">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+              <span>Overview</span>
+              <span class="phase-tag">KPIs</span>
+            </button>
+
+            <button class="nav-item admin-only-ui" data-screen="learning">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
+              <span>Active Learning</span>
+              <span class="phase-tag">Active</span>
+            </button>
+
+            <button class="nav-item admin-only-ui" data-screen="simulator">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+              <span>Simulator &amp; Drop</span>
+              <span class="phase-tag">Dynamic</span>
+            </button>
+
+            <button class="nav-item admin-only-ui" data-screen="admin">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -837,7 +866,7 @@
               <span class="phase-tag">Oversight</span>
             </button>
 
-            <button class="nav-item" data-screen="credits">
+            <button class="nav-item admin-only-ui" data-screen="credits">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -851,7 +880,7 @@
                 <polyline points="21 15 16 10 5 21" />
               </svg>
               <span>Photo Credits</span>
-              <span class="phase-tag">Demo</span>
+              <span class="phase-tag">Admin</span>
             </button>
           </div>
 
@@ -1246,11 +1275,19 @@
                       <div class="heatmap-spot hotspot-2"></div>
                     </div>
 
-                    <!-- Backwards-compat hidden placeholders for tests -->
-                    <div id="scrub-box-face" class="scrub-box hidden" style="display: none">
-                      <span class="scrub-label">✓ Face: Blurred</span>
+                    <!-- Auto-detected PII Scrub Overlay Boxes -->
+                    <div
+                      id="scrub-box-face"
+                      class="scrub-box-auto"
+                      style="top: 18%; left: 16%; width: 138px; height: 86px"
+                    >
+                      <span class="scrub-label">✓ Face / ID: Blurred</span>
                     </div>
-                    <div id="scrub-box-phone" class="scrub-box hidden" style="display: none">
+                    <div
+                      id="scrub-box-phone"
+                      class="scrub-box-auto"
+                      style="top: 39%; left: 18%; width: 134px; height: 44px"
+                    >
                       <span class="scrub-label">✓ Phone: Blurred</span>
                     </div>
                   </div>
@@ -1261,6 +1298,8 @@
                       display: flex;
                       justify-content: space-between;
                       align-items: center;
+                      flex-wrap: wrap;
+                      gap: 8px;
                       margin-top: 10px;
                       font-size: 0.8rem;
                     "
@@ -1270,10 +1309,20 @@
                       style="font-weight: 600; color: var(--color-success)"
                       >2 sensitive regions scrubbed client-side</span
                     >
-                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer">
-                      <input type="checkbox" id="snap-heatmap-toggle" />
-                      <span>Show Grad-CAM Heatmap</span>
-                    </label>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm"
+                        id="snap-burn-scrub-btn"
+                        title="Apply irreversible pixelation to selected regions"
+                      >
+                        🔒 Burn Pixelation
+                      </button>
+                      <label style="display: flex; align-items: center; gap: 5px; cursor: pointer">
+                        <input type="checkbox" id="snap-heatmap-toggle" />
+                        <span>Show Grad-CAM Heatmap</span>
+                      </label>
+                    </div>
                   </div>
 
                   <div
@@ -1580,6 +1629,22 @@
                   id="discover-clear-search-btn"
                 >
                   Show All
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  id="discover-img-search-btn"
+                  title="Visual similarity search"
+                >
+                  📷 Visual Match
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  id="discover-save-search-btn"
+                  title="Save search alert"
+                >
+                  🔔 Save Alert
                 </button>
               </div>
               <div class="filter-header-row">
@@ -2248,6 +2313,58 @@
               </p>
             </div>
 
+            <!-- Swap Controls & User Target Banner -->
+            <div class="card" style="margin-bottom: 16px">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  flex-wrap: wrap;
+                  gap: 12px;
+                "
+              >
+                <div style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 220px">
+                  <div style="font-size: 0.78rem; font-weight: 700; color: var(--color-text-muted)">
+                    Your Swap Configuration
+                  </div>
+                  <div
+                    id="swap-target-item-banner"
+                    style="font-size: 0.85rem; font-weight: 600; color: var(--color-primary)"
+                  >
+                    🎯 Target Want: LED Study Lamp (~₹1,000)
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+                  <select
+                    id="swap-user-offer-select"
+                    class="form-select"
+                    aria-label="Select item you offer to swap"
+                    style="min-width: 210px; font-size: 0.8rem; padding: 6px 10px"
+                  >
+                    <option value="Casio FX-991EX (~₹1,200)">Offer: Casio FX-991EX (~₹1,200)</option>
+                    <option value="Wooden Study Desk (~₹2,600)">Offer: Wooden Study Desk (~₹2,600)</option>
+                    <option value="CLRS Algorithms Book (~₹1,150)">Offer: CLRS Algorithms Book (~₹1,150)</option>
+                    <option value="Sony WH-1000XM4 (~₹4,500)">Offer: Sony WH-1000XM4 (~₹4,500)</option>
+                  </select>
+
+                  <div class="mode-toggle-group" role="group" aria-label="Swap cycle mode">
+                    <button type="button" class="mode-toggle-btn active" id="swap-mode-3way">
+                      3-Way Circular
+                    </button>
+                    <button type="button" class="mode-toggle-btn" id="swap-mode-2way">
+                      2-Way Direct
+                    </button>
+                  </div>
+
+                  <button type="button" class="btn btn-secondary btn-sm" id="swap-reset-btn">
+                    ↺ Reset Swap
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- 3 Fake Users with Haves and Wants -->
             <div class="card">
               <div class="card-header">
@@ -2273,13 +2390,13 @@
                     border: 1px solid var(--color-border);
                   "
                 >
-                  <div style="font-weight: 700; font-size: 0.88rem">User A: Aarav S.</div>
+                  <div style="font-weight: 700; font-size: 0.88rem">User A: Aarav S. (You)</div>
                   <div style="font-size: 0.76rem; color: var(--color-text-muted)">
                     Hostel Quad 1 &bull; Trust: 92/100
                   </div>
                   <div style="margin-top: 8px; font-size: 0.8rem">
-                    <div>📦 <strong>Haves:</strong> Casio FX-991EX (~₹1,200)</div>
-                    <div>🎯 <strong>Wants:</strong> LED Study Lamp (~₹1,000)</div>
+                    <div>📦 <strong>Haves:</strong> <span id="swap-user-a-haves">Casio FX-991EX (~₹1,200)</span></div>
+                    <div>🎯 <strong>Wants:</strong> <span id="swap-user-a-wants">LED Study Lamp (~₹1,000)</span></div>
                   </div>
                   <button
                     class="btn btn-secondary btn-sm"
@@ -2558,7 +2675,8 @@
             <div class="card">
               <div class="card-header">
                 <h3 class="card-title">
-                  <span>AI Moderation Queue (3 Sample Flags)</span>
+                  <span>AI Moderation Queue</span>
+                  <span class="fair-badge overpriced" id="admin-pending-flags-badge">3 Pending</span>
                   <span class="badge-algo">Human-in-the-Loop</span>
                 </h3>
                 <span style="font-size: 0.76rem; color: var(--color-text-muted)"
@@ -4221,6 +4339,30 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Image Enlargement Lightbox Modal -->
+    <div
+      id="image-lightbox-modal"
+      class="email-modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lightbox-caption"
+    >
+      <div class="lightbox-modal-card">
+        <div class="lightbox-header">
+          <span id="lightbox-caption" class="lightbox-title">Item Photo Preview</span>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            id="btn-close-lightbox"
+            aria-label="Close enlarged photo"
+          >
+            ✕ Close
+          </button>
+        </div>
+        <div class="lightbox-body" id="lightbox-media-container"></div>
       </div>
     </div>
   </body>
